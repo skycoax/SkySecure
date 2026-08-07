@@ -5,6 +5,11 @@ include ':TMessagesProj_AppHockeyApp'
 include ':TMessagesProj_AppStandalone'
 include ':TMessagesProj_AppTests'
 
-// SkySecure scanner core — plain Kotlin/JVM, no Android SDK needed.
-include ':jacsecure-core'
-project(':jacsecure-core').projectDir = new File(rootDir, '../TelegramAPI/client/jacsecure-core')
+// SkySecure scanner core.
+//
+// includeBuild, NOT include. As a subproject it would share this build's
+// plugin classpath, and Telegram already has the Kotlin plugin there at a
+// different version — Gradle then refuses with "already on the classpath with
+// an unknown version". A composite build gives the scanner its own plugin
+// classpath, so the two Kotlin versions never meet.
+includeBuild('../TelegramAPI/client/jacsecure-core')

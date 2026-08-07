@@ -68,3 +68,29 @@ node ../TelegramAPI/tools/preflight.mjs --fork .
 - **Пиннинг TLS** — домен прописан, пины ещё placeholder.
 - **`google-services.json`** — сейчас в дереве лежит файл Telegram из upstream.
   Push-уведомления не будут работать, пока вы не подставите свой проект Firebase.
+
+## Известные грабли при сборке
+
+Три штуки, каждая стоила времени и каждая выглядит как что-то другое.
+
+**`patch does not apply`, хотя патч и файл выглядят нормально.** Git for Windows
+по умолчанию идёт с `core.autocrlf=true` и разворачивает `.patch` в CRLF при
+чекауте. `git apply` сравнивает контекст побайтово, включая символ конца строки,
+и ищет CRLF-строки в дереве с LF. В `TelegramAPI/.gitattributes` теперь стоит
+`*.patch -text`, но если вы клонировали раньше — перевыкачайте файл.
+
+**`Error resolving plugin [id: 'org.jetbrains.kotlin.jvm']` … `already on the
+classpath with an unknown version`.** Сканер нельзя подключать как `include` —
+подпроект делит classpath плагинов с основной сборкой, а Telegram уже держит там
+Kotlin своей версии. Нужен `includeBuild` (composite build): у включённой сборки
+свой classpath, и две версии Kotlin не встречаются. Зависимость тогда по
+координатам — `uz.jac.secure:jacsecure-core:0.1.0`.
+
+**`Malformed \uxxxx encoding`, и Gradle показывает на чужой файл.** Это
+`Properties.load()` на `local.properties`. В пути `C:\Users\user\...`
+последовательность `\u` читается как начало `\uXXXX`. Пишите путь через прямые
+слэши:
+
+```properties
+sdk.dir=C:/Users/user/AppData/Local/Android/sdk
+```

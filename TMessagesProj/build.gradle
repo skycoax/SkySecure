@@ -22,7 +22,7 @@ apply from: "$rootDir/../TelegramAPI/client/telegram-integration/gradle/jac-cred
 dependencies {
     // The scanner core. Plain Kotlin/JVM, no Android dependencies — see
     // ../TelegramAPI/client/jacsecure-core.
-    implementation project(':jacsecure-core')
+    implementation 'uz.jac.secure:jacsecure-core:0.1.0'
     implementation 'androidx.core:core:1.16.0'
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.6'
