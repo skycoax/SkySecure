@@ -1019,9 +1019,29 @@ public class FileLoader extends BaseController {
 
                 if (!operation.isPreloadVideoOperation()) {
                     loadOperationPathsUI.remove(fileName);
-                    if (delegate != null) {
-                        delegate.fileDidLoaded(fileName, finalFile, parentObject, finalType);
-                    }
+                    // JAC Secure interception point.
+                    //
+                    // The bytes are on disk, but nothing in the UI may treat the file
+                    // as available until it has a verdict. ScanGate posts the scan to a
+                    // background executor and re-invokes this continuation when it
+                    // finishes; a MALICIOUS verdict moves the file into app-private
+                    // quarantine first, so the path handed back is the quarantined one
+                    // and no other component ever learns the original location.
+                    //
+                    // This is a delay, never a block: the continuation always runs, so
+                    // "Open anyway" remains reachable and Telegram ToS 1.3 is satisfied.
+                    uz.jac.secure.android.ScanGate.getInstance(currentAccount).onFileLoaded(
+                            fileName,
+                            finalFile,
+                            parentObject,
+                            finalType,
+                            operation.getJacStreamingSha256(),
+                            (scannedFile) -> {
+                                if (delegate != null) {
+                                    delegate.fileDidLoaded(fileName, scannedFile, parentObject, finalType);
+                                }
+                            }
+                    );
                 }
 
                 checkDownloadQueue(operation, operation.getQueue(), 0);

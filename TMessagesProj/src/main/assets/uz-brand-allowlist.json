@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "feed_key": "uz_brand_allowlist",
+  "description": "Uzbekistan bank / payment / government / telecom brands that are impersonated by malware and phishing in-region. Consumed by BOTH the APK impersonation check (android.packages + android.signing_cert_sha256) and the URL typosquat/homograph check (domains).",
+  "provisioning_contract": {
+    "domains": "Registrable domains are the high-confidence part of this file and are safe to ship as-is. They drive URL typosquatting and homograph detection.",
+    "android.packages": "package_verified=false means the package id has NOT been confirmed against an official store listing. Unverified packages are used ONLY for brand-name similarity signals, never to assert a cert mismatch.",
+    "android.signing_cert_sha256": "pin_status=unpinned means we hold no signing-certificate pin. The APK impersonation check CANNOT report IMPERSONATION_CERT_MISMATCH for an unpinned brand — see ApkImpersonationCheck. Pins are provisioned with tools/allowlist-provision.mjs from an APK obtained through an official channel.",
+    "release_gate": "tools/check-allowlist.mjs fails a release build if any entry is referenced by cert-mismatch logic while still unpinned."
+  },
+  "trusted_suffixes": [
+    {
+      "suffix": "gov.uz",
+      "note": "Public suffix, NOT a registrable domain — it must never be treated as an allowlist domain for typosquat distance (every *.gov.uz name would be distance 0 from it). Listed here so that a host under it can be reported as government-operated, and so that a lookalike of the suffix itself (g0v.uz, gov-uz.com) is flagged."
+    }
+  ],
+  "entries": [
+    {
+      "id": "cbu",
+      "brand": { "en": "Central Bank of Uzbekistan", "uz": "O'zbekiston Respublikasi Markaziy banki", "ru": "Центральный банк Узбекистана" },
+      "category": "government",
+      "domains": ["cbu.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "nbu",
+      "brand": { "en": "National Bank of Uzbekistan", "uz": "O'zbekiston Milliy banki", "ru": "Национальный банк Узбекистана" },
+      "category": "bank",
+      "domains": ["nbu.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "asakabank",
+      "brand": { "en": "Asakabank", "uz": "Asakabank", "ru": "Асакабанк" },
+      "category": "bank",
+      "domains": ["asakabank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "ipotekabank",
+      "brand": { "en": "Ipoteka Bank", "uz": "Ipoteka Bank", "ru": "Ипотека Банк" },
+      "category": "bank",
+      "domains": ["ipotekabank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "agrobank",
+      "brand": { "en": "Agrobank", "uz": "Agrobank", "ru": "Агробанк" },
+      "category": "bank",
+      "domains": ["agrobank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "sqb",
+      "brand": { "en": "SQB", "uz": "Sanoat Qurilish Bank", "ru": "Промстройбанк" },
+      "category": "bank",
+      "domains": ["sqb.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "hamkorbank",
+      "brand": { "en": "Hamkorbank", "uz": "Hamkorbank", "ru": "Хамкорбанк" },
+      "category": "bank",
+      "domains": ["hamkorbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "kapitalbank",
+      "brand": { "en": "Kapitalbank", "uz": "Kapitalbank", "ru": "Капиталбанк" },
+      "category": "bank",
+      "domains": ["kapitalbank.uz", "apelsin.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "ipakyulibank",
+      "brand": { "en": "Ipak Yuli Bank", "uz": "Ipak Yo'li banki", "ru": "Ипак Йули банк" },
+      "category": "bank",
+      "domains": ["ipakyulibank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "aloqabank",
+      "brand": { "en": "Aloqabank", "uz": "Aloqabank", "ru": "Алокабанк" },
+      "category": "bank",
+      "domains": ["aloqabank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "turonbank",
+      "brand": { "en": "Turonbank", "uz": "Turonbank", "ru": "Туронбанк" },
+      "category": "bank",
+      "domains": ["turonbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "mikrokreditbank",
+      "brand": { "en": "Mikrokreditbank", "uz": "Mikrokreditbank", "ru": "Микрокредитбанк" },
+      "category": "bank",
+      "domains": ["mkbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "xalqbanki",
+      "brand": { "en": "Xalq Banki", "uz": "Xalq banki", "ru": "Народный банк" },
+      "category": "bank",
+      "domains": ["xb.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "trustbank",
+      "brand": { "en": "Trustbank", "uz": "Trustbank", "ru": "Трастбанк" },
+      "category": "bank",
+      "domains": ["trustbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "infinbank",
+      "brand": { "en": "InfinBank", "uz": "InfinBank", "ru": "Инфинбанк" },
+      "category": "bank",
+      "domains": ["infinbank.com"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "asiaalliancebank",
+      "brand": { "en": "Asia Alliance Bank", "uz": "Asia Alliance Bank", "ru": "Азия Альянс Банк" },
+      "category": "bank",
+      "domains": ["aab.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "orientfinans",
+      "brand": { "en": "Orient Finans Bank", "uz": "Orient Finans Bank", "ru": "Ориент Финанс Банк" },
+      "category": "bank",
+      "domains": ["ofb.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "davrbank",
+      "brand": { "en": "Davr Bank", "uz": "Davr bank", "ru": "Давр банк" },
+      "category": "bank",
+      "domains": ["davrbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "anorbank",
+      "brand": { "en": "Anor Bank", "uz": "Anor bank", "ru": "Анор банк" },
+      "category": "bank",
+      "domains": ["anorbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "tbcuz",
+      "brand": { "en": "TBC Bank Uzbekistan", "uz": "TBC bank O'zbekiston", "ru": "TBC банк Узбекистан" },
+      "category": "bank",
+      "domains": ["tbcbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "uzumbank",
+      "brand": { "en": "Uzum Bank", "uz": "Uzum Bank", "ru": "Узум Банк" },
+      "category": "bank",
+      "domains": ["uzumbank.uz", "uzum.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "ziraatbank",
+      "brand": { "en": "Ziraat Bank Uzbekistan", "uz": "Ziraat Bank O'zbekiston", "ru": "Зираат Банк Узбекистан" },
+      "category": "bank",
+      "domains": ["ziraatbank.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "click",
+      "brand": { "en": "Click", "uz": "Click", "ru": "Click" },
+      "category": "payment",
+      "domains": ["click.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "payme",
+      "brand": { "en": "Payme", "uz": "Payme", "ru": "Payme" },
+      "category": "payment",
+      "domains": ["payme.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "paynet",
+      "brand": { "en": "Paynet", "uz": "Paynet", "ru": "Пэйнет" },
+      "category": "payment",
+      "domains": ["paynet.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "upay",
+      "brand": { "en": "Upay", "uz": "Upay", "ru": "Upay" },
+      "category": "payment",
+      "domains": ["upay.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "oson",
+      "brand": { "en": "OSON", "uz": "OSON", "ru": "OSON" },
+      "category": "payment",
+      "domains": ["oson.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "uzcard",
+      "brand": { "en": "Uzcard", "uz": "Uzcard", "ru": "Узкард" },
+      "category": "card_scheme",
+      "domains": ["uzcard.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "humo",
+      "brand": { "en": "Humo", "uz": "Humo", "ru": "Хумо" },
+      "category": "card_scheme",
+      "domains": ["humo.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "mygov",
+      "brand": { "en": "my.gov.uz", "uz": "Yagona interaktiv davlat xizmatlari portali", "ru": "Единый портал интерактивных госуслуг" },
+      "category": "government",
+      "domains": ["my.gov.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "soliq",
+      "brand": { "en": "State Tax Committee", "uz": "Davlat soliq qo'mitasi", "ru": "Государственный налоговый комитет" },
+      "category": "government",
+      "domains": ["soliq.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "oneid",
+      "brand": { "en": "OneID", "uz": "OneID", "ru": "OneID" },
+      "category": "government",
+      "domains": ["id.gov.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "eimzo",
+      "brand": { "en": "E-IMZO", "uz": "E-IMZO", "ru": "E-IMZO" },
+      "category": "government",
+      "domains": ["e-imzo.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "lex",
+      "brand": { "en": "Lex.uz", "uz": "Lex.uz", "ru": "Lex.uz" },
+      "category": "government",
+      "domains": ["lex.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "uzmobile",
+      "brand": { "en": "Uzmobile", "uz": "Uzmobile", "ru": "Узмобайл" },
+      "category": "telecom",
+      "domains": ["uzmobile.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "beeline_uz",
+      "brand": { "en": "Beeline Uzbekistan", "uz": "Beeline O'zbekiston", "ru": "Билайн Узбекистан" },
+      "category": "telecom",
+      "domains": ["beeline.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "ucell",
+      "brand": { "en": "Ucell", "uz": "Ucell", "ru": "Ucell" },
+      "category": "telecom",
+      "domains": ["ucell.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    },
+    {
+      "id": "mobiuz",
+      "brand": { "en": "Mobiuz", "uz": "Mobiuz", "ru": "Мобиуз" },
+      "category": "telecom",
+      "domains": ["mobi.uz"],
+      "android": { "packages": [], "package_verified": false, "signing_cert_sha256": [], "pin_status": "unpinned" }
+    }
+  ]
+}

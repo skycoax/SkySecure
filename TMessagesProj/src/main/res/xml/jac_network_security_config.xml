@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Transport security for the scanner's own API.
+
+  Reference it from the fork's AndroidManifest:
+
+      <application android:networkSecurityConfig="@xml/jac_network_security_config" ...>
+
+  Note this file governs the WHOLE app, Telegram's own MTProto sockets
+  included. That is fine — MTProto is not HTTP and is unaffected by
+  cleartextTrafficPermitted — but it does mean this file must never be
+  loosened for our convenience.
+
+  Two layers, and the reason for each:
+
+  1. cleartextTrafficPermitted="false" at the base. On API 28+ this is already
+     the platform default, so the value here is for older devices and, more
+     usefully, for making the intent explicit and reviewable. HttpBackendClient
+     independently refuses a non-https base URL, so a mistake has to get past
+     two unrelated checks.
+
+  2. A certificate-pin set for the API domain. This is the layer that matters
+     in this region: the threat is not a self-signed certificate, it is a CA
+     that will issue for our domain to someone who is not us, whether through
+     compromise or instruction. Public CA trust alone does not survive that;
+     a pin does.
+
+  PROVISIONING — this file ships INCOMPLETE, on purpose.
+
+  The pins below are placeholders. Publishing a wrong pin is worse than
+  publishing none: it bricks the API for every installed client with no
+  server-side fix and no way to reach the users, because the update mechanism
+  is the very channel a pin failure blocks.
+
+  Before release:
+
+    1. Set the domain to your API host.
+    2. Compute the SPKI pin of your LEAF certificate:
+
+         openssl s_client -servername api.example.uz -connect api.example.uz:443 \
+           | openssl x509 -pubkey -noout \
+           | openssl pkey -pubin -outform der \
+           | openssl dgst -sha256 -binary | base64
+
+    3. Compute a SECOND pin from a backup key that is NOT yet deployed and is
+       held offline. Two pins is not belt-and-braces; it is the only way to
+       rotate a certificate without bricking every installed client, and
+       Android will refuse the connection if the presented chain matches
+       neither.
+    4. Set expiration to the date the current certificate expires. After that
+       date pinning stops being enforced rather than failing closed — which is
+       the correct trade for a mechanism whose failure mode is permanent and
+       unfixable, and it is why the date must be kept current.
+
+  tools/preflight.mjs fails a release build while the placeholders are here.
+-->
+<network-security-config>
+
+    <!--
+      Cleartext stays PERMITTED at the base, and that is not an oversight.
+
+      This app is also a web browser. Upstream sets
+      android:usesCleartextTraffic="true" precisely so a tapped http:// link
+      opens instead of failing, and a lot of the region's sites are still
+      plain http. Forbidding cleartext app-wide would break opening those
+      links — a visible, everyday regression, traded for no security gain,
+      because the user chose to visit that page and we already warned them
+      about it if it was suspicious.
+
+      What must never be cleartext is OUR API, and that is handled by the
+      domain-config below. Locking down the one endpoint that carries device
+      tokens and verdicts is the whole point; locking down the browser is a
+      different product decision that would make the app worse at being a
+      messenger.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+      User-installed CAs are deliberately NOT trusted for our API. On a device
+      where someone has installed an interception certificate — an employer's
+      MDM profile, or an app the user was talked into installing — every
+      verdict response becomes rewritable by whoever put it there.
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">sky.bestcenter.uz</domain>
+        <!--
+          Pins are still placeholders — pinning was deliberately deferred.
+          Until they are real, this domain-config contributes only the cleartext
+          refusal, which is worth having on its own. tools/preflight.mjs keeps
+          failing on the REPLACE-WITH values so the gap cannot be forgotten.
+
+          Note for whoever provisions these: the certificate must NOT be
+          proxied through Cloudflare when you take the pin. Behind an orange
+          cloud the app sees Cloudflare's certificate, not the server's, so the
+          pin would bind us to a key we do not control and would break the day
+          Cloudflare rotates it. The DNS record is currently "DNS only", which
+          is the correct setting for this reason.
+        -->
+        <pin-set expiration="2026-01-01">
+            <pin digest="SHA-256">REPLACE-WITH-LEAF-SPKI-PIN-BASE64=</pin>
+            <pin digest="SHA-256">REPLACE-WITH-OFFLINE-BACKUP-PIN-BASE64=</pin>
+        </pin-set>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!--
+      Localhost over cleartext, debug builds only. Overlays are ignored
+      entirely in a release build, so this cannot leak into production even if
+      someone forgets it is here.
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>

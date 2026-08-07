@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "feed_key": "magic_bytes",
+  "description": "File-type signatures used for extension<->MIME<->content consistency checking. `offset` is a byte offset from the start of the file; `hex` is the byte sequence in lowercase hex. `ext` lists the extensions that legitimately carry this content type.",
+  "signatures": [
+    { "id": "zip",   "offset": 0, "hex": "504b0304", "mime": "application/zip", "ext": ["zip", "apk", "jar", "docx", "xlsx", "pptx", "odt", "ods", "epub", "aar", "ipa", "xapk", "apks"], "container": true },
+    { "id": "zip_empty", "offset": 0, "hex": "504b0506", "mime": "application/zip", "ext": ["zip"], "container": true },
+    { "id": "zip_spanned", "offset": 0, "hex": "504b0708", "mime": "application/zip", "ext": ["zip"], "container": true },
+    { "id": "rar4",  "offset": 0, "hex": "526172211a0700", "mime": "application/vnd.rar", "ext": ["rar"], "container": true },
+    { "id": "rar5",  "offset": 0, "hex": "526172211a070100", "mime": "application/vnd.rar", "ext": ["rar"], "container": true },
+    { "id": "7z",    "offset": 0, "hex": "377abcaf271c", "mime": "application/x-7z-compressed", "ext": ["7z"], "container": true },
+    { "id": "gzip",  "offset": 0, "hex": "1f8b", "mime": "application/gzip", "ext": ["gz", "tgz"], "container": true },
+    { "id": "bzip2", "offset": 0, "hex": "425a68", "mime": "application/x-bzip2", "ext": ["bz2"], "container": true },
+    { "id": "xz",    "offset": 0, "hex": "fd377a585a00", "mime": "application/x-xz", "ext": ["xz"], "container": true },
+
+    { "id": "pdf",   "offset": 0, "hex": "255044462d", "mime": "application/pdf", "ext": ["pdf"] },
+
+    { "id": "ole2",  "offset": 0, "hex": "d0cf11e0a1b11ae1", "mime": "application/x-ole-storage", "ext": ["doc", "xls", "ppt", "msi", "msg"], "container": true },
+
+    { "id": "png",   "offset": 0, "hex": "89504e470d0a1a0a", "mime": "image/png", "ext": ["png"] },
+    { "id": "jpeg",  "offset": 0, "hex": "ffd8ff", "mime": "image/jpeg", "ext": ["jpg", "jpeg", "jpe"] },
+    { "id": "gif87", "offset": 0, "hex": "474946383761", "mime": "image/gif", "ext": ["gif"] },
+    { "id": "gif89", "offset": 0, "hex": "474946383961", "mime": "image/gif", "ext": ["gif"] },
+    { "id": "bmp",   "offset": 0, "hex": "424d", "mime": "image/bmp", "ext": ["bmp"] },
+    { "id": "webp",  "offset": 8, "hex": "57454250", "mime": "image/webp", "ext": ["webp"] },
+    { "id": "tiff_le", "offset": 0, "hex": "49492a00", "mime": "image/tiff", "ext": ["tif", "tiff"] },
+    { "id": "tiff_be", "offset": 0, "hex": "4d4d002a", "mime": "image/tiff", "ext": ["tif", "tiff"] },
+    { "id": "heic",  "offset": 4, "hex": "6674797068656963", "mime": "image/heic", "ext": ["heic"] },
+    { "id": "avif",  "offset": 4, "hex": "6674797061766966", "mime": "image/avif", "ext": ["avif"] },
+
+    { "id": "mp4",   "offset": 4, "hex": "66747970", "mime": "video/mp4", "ext": ["mp4", "m4v", "m4a", "mov", "3gp"] },
+    { "id": "matroska", "offset": 0, "hex": "1a45dfa3", "mime": "video/x-matroska", "ext": ["mkv", "webm"] },
+    { "id": "avi",   "offset": 8, "hex": "41564920", "mime": "video/x-msvideo", "ext": ["avi"] },
+    { "id": "flv",   "offset": 0, "hex": "464c5601", "mime": "video/x-flv", "ext": ["flv"] },
+
+    { "id": "mp3_id3", "offset": 0, "hex": "494433", "mime": "audio/mpeg", "ext": ["mp3"] },
+    { "id": "ogg",   "offset": 0, "hex": "4f676753", "mime": "audio/ogg", "ext": ["ogg", "oga", "opus"] },
+    { "id": "flac",  "offset": 0, "hex": "664c6143", "mime": "audio/flac", "ext": ["flac"] },
+    { "id": "wav",   "offset": 8, "hex": "57415645", "mime": "audio/wav", "ext": ["wav"] },
+    { "id": "amr",   "offset": 0, "hex": "2321414d52", "mime": "audio/amr", "ext": ["amr"] },
+
+    { "id": "elf",   "offset": 0, "hex": "7f454c46", "mime": "application/x-elf", "ext": ["so", "elf", "bin"], "executable": true },
+    { "id": "pe",    "offset": 0, "hex": "4d5a", "mime": "application/x-msdownload", "ext": ["exe", "dll", "scr", "sys", "cpl", "ocx"], "executable": true },
+    { "id": "macho32", "offset": 0, "hex": "feedface", "mime": "application/x-mach-binary", "ext": ["dylib", "bin"], "executable": true },
+    { "id": "macho64", "offset": 0, "hex": "feedfacf", "mime": "application/x-mach-binary", "ext": ["dylib", "bin"], "executable": true },
+    { "id": "dex",   "offset": 0, "hex": "6465780a", "mime": "application/x-dex", "ext": ["dex"], "executable": true },
+    { "id": "class", "offset": 0, "hex": "cafebabe", "mime": "application/java-vm", "ext": ["class"], "executable": true },
+    { "id": "shebang", "offset": 0, "hex": "2321", "mime": "text/x-script", "ext": ["sh", "bash", "py", "pl", "rb"], "executable": true },
+
+    { "id": "rtf",   "offset": 0, "hex": "7b5c727466", "mime": "application/rtf", "ext": ["rtf"] },
+    { "id": "sqlite", "offset": 0, "hex": "53514c69746520666f726d6174203300", "mime": "application/vnd.sqlite3", "ext": ["db", "sqlite", "sqlite3"] },
+    { "id": "lnk",   "offset": 0, "hex": "4c00000001140200", "mime": "application/x-ms-shortcut", "ext": ["lnk"], "executable": true }
+  ],
+  "dangerous_extensions": [
+    "apk", "apks", "xapk", "apkm", "dex", "exe", "dll", "scr", "com", "pif", "cpl",
+    "msi", "msix", "bat", "cmd", "vbs", "vbe", "js", "jse", "jar", "ws", "wsf",
+    "wsh", "ps1", "psm1", "hta", "reg", "lnk", "inf", "sys", "so", "elf", "sh",
+    "run", "bin", "gadget", "application", "chm", "iso", "img", "vhd"
+  ],
+  "extension_mime_map": {
+    "apk": "application/vnd.android.package-archive",
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "docm": "application/vnd.ms-word.document.macroEnabled.12",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xlsm": "application/vnd.ms-excel.sheet.macroEnabled.12",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "pptm": "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
+    "doc": "application/msword",
+    "xls": "application/vnd.ms-excel",
+    "ppt": "application/vnd.ms-powerpoint",
+    "zip": "application/zip",
+    "rar": "application/vnd.rar",
+    "7z": "application/x-7z-compressed",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "mp4": "video/mp4",
+    "mp3": "audio/mpeg",
+    "txt": "text/plain"
+  }
+}

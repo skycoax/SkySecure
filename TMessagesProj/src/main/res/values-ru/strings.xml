@@ -263,4 +263,213 @@
     <string name="RemindTodayAt">\'Отправить сегодня в\' HH:mm</string>
     <string name="RemindDayAt">\'Отправить\' d MMM \'в\' HH:mm</string>
     <string name="RemindDayYearAt">\'Напомнить\' d MMM yyyy \'в\' HH:mm</string>
+
+    <!-- SkySecure scanner -->
+
+
+    <string name="app_name">SkySecure</string>
+
+    <string name="jac_about_telegram_api">SkySecure — неофициальное приложение для обмена сообщениями, использующее Telegram API. Оно не связано с Telegram и не одобрено Telegram.</string>
+
+    <string name="jac_about_source">Это свободное программное обеспечение под лицензией GPLv3. Исходный код: %1$s</string>
+
+    <string name="jac_about_title">О приложении SkySecure</string>
+
+    <string name="jac_about_version">Версия %1$s (%2$s)</string>
+
+    <string name="jac_about_scanner_heading">Что делает проверка</string>
+
+    <string name="jac_about_scanner_body">Каждый полученный файл проверяется, прежде чем его можно открыть или переслать, а каждая ссылка — прежде чем она откроется. В проверках, которым нужен наш сервер, передаётся только цифровой отпечаток файла или сам адрес — никогда имена файлов, тексты сообщений или отправители.\n\nВ секретных чатах проверка выполняется только на вашем устройстве. Никуда ничего не отправляется.</string>
+
+    <string name="jac_about_licence_heading">Лицензия и исходный код</string>
+
+    <string name="jac_about_open_source">Посмотреть исходный код</string>
+
+    <string name="jac_about_privacy">Политика конфиденциальности</string>
+
+
+    <string name="jac_outgoing_title">Вы собираетесь отправить опасный файл</string>
+
+    <string name="jac_outgoing_body">%1$s\n\nЕсли вас попросили переслать это, значит, через ваш аккаунт добираются до тех, кто вам доверяет.</string>
+
+    <string name="jac_outgoing_cancel">Не отправлять</string>
+
+    <string name="jac_outgoing_send_anyway">Всё равно отправить</string>
+
+
+    <string name="jac_scan_scanning">Проверяем…</string>
+
+    <string name="jac_scan_clean">Проверено — ничего опасного не найдено</string>
+
+    <string name="jac_scan_unknown">Проверено — сведений об этом файле нет</string>
+
+    <string name="jac_scan_local_only">Проверено на этом устройстве</string>
+
+    <string name="jac_scan_suspicious">Подозрительный файл</string>
+
+    <string name="jac_scan_dangerous">Опасный файл — заблокирован</string>
+
+    <string name="jac_scan_failed">Не удалось проверить</string>
+
+    <string name="jac_scan_overridden">Вы открыли этот опасный файл</string>
+
+
+    <string name="jac_scan_suspicious_masquerade">Имя файла скрывает его тип</string>
+
+    <string name="jac_scan_suspicious_installer">Этот файл устанавливает приложение</string>
+
+    <string name="jac_scan_suspicious_impersonation">Приложение выдаёт себя за другое</string>
+
+
+    <string name="jac_chip_dangerous">Опасный файл — заблокирован</string>
+
+    <string name="jac_chip_suspicious">Подозрительный файл</string>
+
+    <string name="jac_chip_clean">Проверено</string>
+
+    <string name="jac_chip_unknown">Проверено</string>
+
+    <string name="jac_chip_local">Проверено на устройстве</string>
+
+    <string name="jac_chip_link_suspicious">Подозрительная ссылка</string>
+
+
+    <string name="jac_early_warning_title">Файл не тот, за кого себя выдаёт</string>
+
+    <string name="jac_early_warning_body">В названии указано «%1$s», но внутри — %2$s. Само скачивание не опасно, но не открывайте его.</string>
+
+    <string name="jac_early_warning_continue">Всё равно скачать</string>
+
+    <string name="jac_early_warning_cancel">Не скачивать</string>
+
+
+    <string name="jac_quarantine_title">Этот файл опасен</string>
+
+    <string name="jac_quarantine_body">%1$s\n\nФайл остаётся внутри SkySecure. Пока он здесь, он не попадёт в галерею и не будет доступен другим приложениям.</string>
+
+    <string name="jac_quarantine_keep_safe">Оставить в безопасности</string>
+
+    <string name="jac_quarantine_open_anyway">Всё равно открыть…</string>
+
+    <string name="jac_quarantine_delete">Удалить файл</string>
+
+
+    <string name="jac_quarantine_step">Шаг %1$d из %2$d</string>
+
+
+    <string name="jac_quarantine_confirm_title">Вы уверены?</string>
+
+    <string name="jac_quarantine_confirm_body">Если это поддельное банковское приложение, то, открыв его, вы позволите постороннему читать коды из SMS и снять деньги с вашего счёта. Ни один банк не присылает приложения для установки.</string>
+
+    <string name="jac_quarantine_confirm_checkbox">Я понимаю риск и всё равно хочу открыть</string>
+
+    <string name="jac_quarantine_confirm_action">Открыть опасный файл</string>
+
+    <string name="jac_quarantine_confirm_cancel">Отмена</string>
+
+
+    <string name="jac_deepscan_title">Отправить файл на углублённую проверку?</string>
+
+    <string name="jac_deepscan_body">Чтобы проверить файл тщательнее, <b>его копия будет отправлена с вашего телефона в сервис проверки SkySecure</b>.\n\nТам файл будет проанализирован и удалён в течение 24 часов. Он не будет передан никому и не будет опубликован ни в одном общедоступном антивирусном сервисе.\n\nНе отправляйте файлы с личными данными, которые не должны покидать ваш телефон.</string>
+
+    <string name="jac_deepscan_file_info">Файл: %1$s · %2$s</string>
+
+    <string name="jac_deepscan_accept">Отправить и проверить</string>
+
+    <string name="jac_deepscan_decline">Не отправлять</string>
+
+    <string name="jac_deepscan_running">Проверяем… это может занять несколько минут</string>
+
+
+    <string name="jac_link_dangerous_title">Эта ссылка — известное мошенничество</string>
+
+    <string name="jac_link_suspicious_title">Ссылка выглядит подозрительно</string>
+
+    <string name="jac_link_reason">%1$s</string>
+
+    <string name="jac_link_real_destination">На самом деле ссылка ведёт сюда:</string>
+
+    <string name="jac_link_display_mismatch">В сообщении показано «%1$s», но ссылка ведёт в другое место.</string>
+
+    <string name="jac_link_redirect_chain">Она проходит через: %1$s</string>
+
+    <string name="jac_link_back">Назад</string>
+
+    <string name="jac_link_continue">Всё равно продолжить…</string>
+
+    <string name="jac_link_continue_confirm">Открыть ссылку, хотя она похожа на мошенническую?</string>
+
+    <string name="jac_link_continue_confirm_action">Открыть ссылку</string>
+
+
+    <string name="jac_reason_homograph">Этот адрес написан буквами, которые выглядят точно как %1$s, но это другой сайт.</string>
+
+    <string name="jac_reason_typo">Этот адрес отличается от %1$s на одну-две буквы.</string>
+
+    <string name="jac_reason_subdomain">В адресе видно %1$s, но настоящий сайт — %2$s.</string>
+
+    <string name="jac_reason_brand_in_domain">В адресе используется имя %1$s, но он им не принадлежит.</string>
+
+    <string name="jac_reason_raw_ip">Ссылка ведёт на числовой адрес вместо имени сайта.</string>
+
+    <string name="jac_reason_userinfo">Ссылка скрывает свой настоящий адрес.</string>
+
+    <string name="jac_reason_blocklist">Этот адрес есть в списке известных мошеннических сайтов.</string>
+
+
+    <string name="jac_reason_rtl">Имя файла составлено так, чтобы скрыть, что это за файл на самом деле.</string>
+
+    <string name="jac_reason_double_ext">Выглядит как документ, но на самом деле это установщик приложения.</string>
+
+    <string name="jac_reason_magic_mismatch">Файл называется .%1$s, но внутри — %2$s.</string>
+
+    <string name="jac_reason_fake_bank">Приложение выдаёт себя за %1$s, но подписано не %1$s. Это подделка.</string>
+
+    <string name="jac_reason_sms_accessibility">Это приложение может читать ваши SMS и управлять экраном — именно так крадут одноразовые коды.</string>
+
+    <string name="jac_reason_macro">Документ содержит код, который запускается при открытии.</string>
+
+    <string name="jac_reason_archive_bomb">Этот архив сделан так, чтобы при распаковке заполнить память телефона.</string>
+
+    <string name="jac_reason_impersonation_label">Приложение выдаёт себя за %1$s, но это не официальное приложение %1$s.</string>
+
+    <string name="jac_reason_confusable_name">Имя файла подражает %1$s с помощью похожих букв.</string>
+
+    <string name="jac_reason_overlay">Приложение может рисовать поверх других приложений — так поддельный экран входа накладывают на настоящий.</string>
+
+    <string name="jac_reason_device_admin">Приложение просит права на управление телефоном, после чего его трудно удалить.</string>
+
+    <string name="jac_reason_unsigned">У приложения нет действительной подписи, поэтому нельзя узнать, кто его сделал.</string>
+
+    <string name="jac_reason_apk_installable">Этот файл устанавливает приложение на ваш телефон. Ни банк, ни госслужба никогда не пришлют вам приложение для установки в чате.</string>
+
+    <string name="jac_reason_remote_template">Документ загружает содержимое из интернета при открытии.</string>
+
+    <string name="jac_reason_pdf_launch">Документ пытается запустить другую программу при открытии.</string>
+
+    <string name="jac_reason_archive_traversal">Архив пытается записать файлы за пределы папки, куда вы его распаковываете.</string>
+
+    <string name="jac_reason_archive_executable">Внутри архива есть установщик приложения.</string>
+
+    <string name="jac_reason_space_padding">Имя файла дополнено пробелами, чтобы настоящее окончание не было видно.</string>
+
+    <string name="jac_reason_dangerous_extension">Файл такого типа может запускать код на вашем телефоне.</string>
+
+
+    <string name="jac_settings_title">Проверка безопасности</string>
+
+    <string name="jac_settings_enable">Проверять входящие файлы</string>
+
+    <string name="jac_settings_enable_summary">Проверять каждый полученный файл, прежде чем его можно открыть или переслать.</string>
+
+    <string name="jac_settings_links">Проверять ссылки</string>
+
+    <string name="jac_settings_links_summary">Предупреждать о фишинге и поддельных банковских сайтах.</string>
+
+    <string name="jac_settings_secret_note">В секретных чатах проверка всегда выполняется только на вашем устройстве. На наши серверы ничего не отправляется.</string>
+
+    <string name="jac_settings_privacy">Что мы собираем</string>
+
+    <string name="jac_settings_privacy_summary">Только цифровой отпечаток файла и результат. Никогда — имена файлов, сообщения или отправителей.</string>
+
 </resources>

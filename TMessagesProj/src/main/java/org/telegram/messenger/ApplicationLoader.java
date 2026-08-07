@@ -289,6 +289,12 @@ public class ApplicationLoader extends Application {
 
         super.onCreate();
 
+        // SkySecure: assembles the scanner. Everything it does lives in
+        // uz.jac.secure.android.ScannerBootstrap so this stays one line and
+        // a rebase onto a new Telegram release does not touch our logic.
+        // Never throws: a scanner that cannot start must not stop the app.
+        uz.jac.secure.android.ScannerBootstrap.install(this);
+
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
             try {

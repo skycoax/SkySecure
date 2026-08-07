@@ -26,8 +26,13 @@ public class BuildVars {
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
     public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
 
-    public static int APP_ID = 4;
-    public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
+    // SkySecure: supplied at build time from credentials.properties or the
+    // environment, never committed. The values that used to be here are
+    // Telegram's own public pair — using them for a third-party client is
+    // grounds for revocation, and revocation takes every installed user's
+    // account access with it.
+    public static int APP_ID = BuildConfig.JAC_API_ID;
+    public static String APP_HASH = BuildConfig.JAC_API_HASH;
 
     // SafetyNet key for Google Identity SDK, set it to empty to disable
     public static String SAFETYNET_KEY = "AIzaSyDqt8P-7F7CPCseMkOiVRgb1LY8RN1bvH8";

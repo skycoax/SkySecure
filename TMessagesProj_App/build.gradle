@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+// SkySecure: release signing from keystore.properties. Removes Gradle's
+// silent fallback to the public debug key.
+apply from: "$rootDir/../TelegramAPI/client/telegram-integration/gradle/jac-signing.gradle"
+
 repositories {
     mavenCentral()
     google()

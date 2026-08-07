@@ -258,6 +258,13 @@ public class FileLoadOperation {
 
     private String ext;
     private RandomAccessFile fileOutputStream;
+
+    // JAC Secure: SHA-256 accumulated as chunks land, so the verdict lookup can
+    // start the moment the download finishes instead of paying a second full pass
+    // over a file that may be several gigabytes. The sink invalidates itself if the
+    // writes turn out not to be sequential (streaming, priority ranges, preload),
+    // in which case ScanGate falls back to hashing the finished file.
+    private final uz.jac.secure.android.StreamingHashSink jacHashSink = new uz.jac.secure.android.StreamingHashSink();
     private RandomAccessFile fiv;
     private RandomAccessFile filePartsStream;
     private File storePath;
@@ -763,6 +770,15 @@ public class FileLoadOperation {
 
         }
         return result;
+    }
+
+    /**
+     * JAC Secure: streaming SHA-256 of the completed file, or null when the
+     * download was not sequential and the digest could not be trusted. A null
+     * here is not an error - it tells ScanGate to hash the finished file.
+     */
+    public String getJacStreamingSha256() {
+        return jacHashSink.digestHexOrNull(totalBytesCount);
     }
 
     public String getFileName() {
@@ -1926,6 +1942,15 @@ public class FileLoadOperation {
                             bytes.limit((int) (limit));
                         }
                     }
+                    // JAC Secure: hash here, NOT at the channel.write below.
+                    // At this point bytes.buffer holds the true file content: the
+                    // `key != null` branch above has already decrypted secret-chat
+                    // media and trimmed padding, while the encryptFile branch that
+                    // follows re-encrypts the buffer for at-rest storage. Hashing
+                    // after that would digest the on-disk ciphertext and produce a
+                    // hash that matches nothing on the server.
+                    jacHashSink.update(requestInfo.offset, bytes.buffer);
+
                     if (encryptFile) {
                         long offset = requestInfo.offset / 16;
                         encryptIv[15] = (byte) (offset & 0xff);

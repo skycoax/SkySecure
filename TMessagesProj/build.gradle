@@ -16,7 +16,13 @@ configurations.all {
     exclude group: 'androidx.recyclerview', module: 'recyclerview'
 }
 
+// SkySecure: api_id/api_hash from credentials.properties or the environment.
+apply from: "$rootDir/../TelegramAPI/client/telegram-integration/gradle/jac-credentials.gradle"
+
 dependencies {
+    // The scanner core. Plain Kotlin/JVM, no Android dependencies — see
+    // ../TelegramAPI/client/jacsecure-core.
+    implementation project(':jacsecure-core')
     implementation 'androidx.core:core:1.16.0'
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.6'

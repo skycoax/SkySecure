@@ -1,46 +1,70 @@
-## Telegram messenger for Android
+# SkySecure
 
-[Telegram](https://telegram.org) is a messaging app with a focus on speed and security. It’s superfast, simple and free.
-This repo contains the official source code for [Telegram App for Android](https://play.google.com/store/apps/details?id=org.telegram.messenger).
+Неофициальный клиент Telegram для Android со встроенной проверкой файлов и
+ссылок. Форк [Telegram-Android](https://github.com/DrKLO/Telegram).
 
-## Creating your Telegram Application
+Сделан для Узбекистана, где вредоносные программы расходятся между людьми прямо
+в мессенджере — поддельные банковские приложения, `.apk` под видом фотографий, —
+и где фишинговых ссылок заметно больше, чем самих файлов.
 
-We welcome all developers to use our API and source code to create applications on our platform.
-There are several things we require from **all developers** for the moment.
+**Не связан с Telegram, не одобрен и не управляется Telegram.**
+Приложение использует Telegram API.
 
-1. [**Obtain your own api_id**](https://core.telegram.org/api/obtaining_api_id) for your application.
-2. Please **do not** use the name Telegram for your app — or make sure your users understand that it is unofficial.
-3. Kindly **do not** use our standard logo (white paper plane in a blue circle) as your app's logo.
-3. Please study our [**security guidelines**](https://core.telegram.org/mtproto/security_guidelines) and take good care of your users' data and privacy.
-4. Please remember to publish **your** code too in order to comply with the licences.
+## Лицензия и исходный код
 
-### API, Protocol documentation
+GPL-3.0-only, как и upstream. Это дерево и есть полный исходный код
+распространяемых сборок.
 
-Telegram API manuals: https://core.telegram.org/api
+Логика сканера вынесена в отдельный репозиторий:
+[skycoax/TelegramAPI](https://github.com/skycoax/TelegramAPI) — там же бэкенд,
+общие данные и документация. Он подключается как Gradle-модуль
+`:jacsecure-core`, см. `settings.gradle`.
 
-MTproto protocol manuals: https://core.telegram.org/mtproto
+## Что изменено относительно upstream
 
-### Compilation Guide
+| Где | Что |
+|---|---|
+| `FileLoadOperation.java` | Потоковый SHA-256 по мере скачивания |
+| `FileLoader.java` | Перехват завершённой загрузки перед показом в UI |
+| `BuildVars.java` | `api_id`/`api_hash` читаются из `BuildConfig`, не зашиты |
+| `ApplicationLoader.java` | Одна строка: `ScannerBootstrap.install(this)` |
+| `AndroidManifest.xml` | `networkSecurityConfig` и два экрана |
+| `uz/jac/secure/android/` | Классы сканера |
+| `assets/` | Общие данные: список брендов, PSL, сигнатуры |
 
-**Note**: In order to support [reproducible builds](https://core.telegram.org/reproducible-builds), this repo contains dummy release.keystore,  google-services.json and filled variables inside BuildVars.java. Before publishing your own APKs please make sure to replace all these files with your own.
+Диффы против upstream намеренно маленькие: чем меньше правок в чужих файлах,
+тем дешевле ребейз на новый релиз Telegram.
 
-You will require Android Studio 2025.1.4, Android NDK 27.2.12479018 and Android SDK 35.
+## Сборка
 
-1. Clone the Telegram source code with its submodules:
-   ```bash
-   git clone --recursive --shallow-submodules https://github.com/DrKLO/Telegram.git Telegram
-   ```
-   In case you forgot the `--recursive` flag, change to the `Telegram` directory and run:
-   ```bash
-   git submodule init && git submodule update --init --recursive --depth=1
-   ```
-2. Copy your release.keystore into TMessagesProj/config
-3. Fill out RELEASE_KEY_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_STORE_PASSWORD in gradle.properties to access your  release.keystore
-4.  Go to https://console.firebase.google.com/, create two android apps with application IDs org.telegram.messenger and org.telegram.messenger.beta, turn on firebase messaging and download google-services.json, which should be copied to the same folder as TMessagesProj.
-5. Open the project in the Studio (note that it should be opened, NOT imported).
-6. Fill out values in TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java – there’s a link for each of the variables showing where and which data to obtain.
-7. You are ready to compile Telegram.
+Нужны свои `api_id` / `api_hash` с <https://my.telegram.org>:
 
-### Localization
+```bash
+cp ../TelegramAPI/client/telegram-integration/gradle/credentials.properties.example credentials.properties
+# заполните, файл в .gitignore
+./gradlew :TMessagesProj_App:assembleDebug
+```
 
-We moved all translations to https://translations.telegram.org/en/android/. Please use it.
+Сборка **не пройдёт** без них, и это намеренно: значения по умолчанию в upstream
+принадлежат Telegram, использование их сторонним клиентом ведёт к отзыву ключа,
+а отзыв забирает доступ к аккаунтам у всех, кто установил сборку.
+
+Для релизной сборки нужен свой keystore:
+
+```bash
+node ../TelegramAPI/tools/gen-keystore.mjs --out ~/skysecure-release.jks
+```
+
+## Что ещё не сделано
+
+Проверяется командой:
+
+```bash
+node ../TelegramAPI/tools/preflight.mjs --fork .
+```
+
+- **Пины сертификатов банков** — без них подделки банковских приложений
+  определяются только по имени и разрешениям, но не по подписи.
+- **Пиннинг TLS** — домен прописан, пины ещё placeholder.
+- **`google-services.json`** — сейчас в дереве лежит файл Telegram из upstream.
+  Push-уведомления не будут работать, пока вы не подставите свой проект Firebase.

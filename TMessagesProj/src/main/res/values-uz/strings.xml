@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  O'zbekcha (lotin) — asosiy til / uz-Latn, the product's primary language.
+
+  Translation notes:
+    * Plain spoken Uzbek, not calqued Russian security jargon. "Zararli dastur"
+      rather than transliterating "malware".
+    * "SMS kod" is the everyday term for a one-time code and is what the fake
+      banking apps themselves use, so victims recognise it.
+    * The bank line matters most in-region: banks in Uzbekistan do not send
+      APKs over Telegram, and saying so plainly is the single most useful
+      sentence in this file.
+    * Verb forms are polite-imperative (siz), matching the official client.
+-->
+<resources>
+
+    <string name="app_name">SkySecure</string>
+    <string name="jac_about_telegram_api">SkySecure — Telegram API asosida ishlab chiqilgan norasmiy xabar almashish ilovasi. U Telegram bilan bog\'liq emas va Telegram tomonidan tasdiqlanmagan.</string>
+    <string name="jac_about_source">Ushbu ilova GPLv3 litsenziyasi asosidagi erkin dasturiy ta\'minot. Manba kodi: %1$s</string>
+    <string name="jac_about_title">SkySecure haqida</string>
+    <string name="jac_about_version">Versiya %1$s (%2$s)</string>
+    <string name="jac_about_scanner_heading">Tekshiruv nima qiladi</string>
+    <string name="jac_about_scanner_body">Sizga kelgan har bir fayl ochilishidan yoki ulashilishidan oldin tekshiriladi, har bir havola esa ochilishidan oldin. Serverimiz kerak bo\'lgan tekshiruvlarda faqat faylning raqamli izi yoki manzilning o\'zi yuboriladi — fayl nomlari, xabar matni yoki kim yuborgani hech qachon yuborilmaydi.\n\nMaxfiy chatlarda tekshiruv faqat qurilmangizda bajariladi. Hech qayerga hech narsa yuborilmaydi.</string>
+    <string name="jac_about_licence_heading">Litsenziya va manba kodi</string>
+    <string name="jac_about_open_source">Manba kodini ko\'rish</string>
+    <string name="jac_about_privacy">Maxfiylik siyosati</string>
+
+    <string name="jac_outgoing_title">Siz xavfli fayl yubormoqchisiz</string>
+    <string name="jac_outgoing_body">%1$s\n\nAgar kimdir sizdan buni yuborishni so\'ragan bo\'lsa, u sizning hisobingiz orqali sizga ishonadigan odamlarga yetib bormoqda.</string>
+    <string name="jac_outgoing_cancel">Yuborilmasin</string>
+    <string name="jac_outgoing_send_anyway">Baribir yuborish</string>
+
+    <string name="jac_scan_scanning">Tekshirilmoqda…</string>
+    <string name="jac_scan_clean">Tekshirildi — xavfli narsa topilmadi</string>
+    <string name="jac_scan_unknown">Tekshirildi — bu fayl haqida ma\'lumot yo\'q</string>
+    <string name="jac_scan_local_only">Shu qurilmada tekshirildi</string>
+    <string name="jac_scan_suspicious">Shubhali fayl</string>
+    <string name="jac_scan_dangerous">Xavfli fayl — bloklandi</string>
+    <string name="jac_scan_failed">Tekshirib bo\'lmadi</string>
+    <string name="jac_scan_overridden">Siz bu xavfli faylni ochishni tanladingiz</string>
+
+    <string name="jac_scan_suspicious_masquerade">Fayl nomi turini yashiradi</string>
+    <string name="jac_scan_suspicious_installer">Bu fayl ilova o\'rnatadi</string>
+    <string name="jac_scan_suspicious_impersonation">Bu ilova boshqasiga o\'xshab olgan</string>
+
+    <string name="jac_chip_dangerous">Xavfli fayl — bloklandi</string>
+    <string name="jac_chip_suspicious">Shubhali fayl</string>
+    <string name="jac_chip_clean">Tekshirildi</string>
+    <string name="jac_chip_unknown">Tekshirildi</string>
+    <string name="jac_chip_local">Shu qurilmada tekshirildi</string>
+    <string name="jac_chip_link_suspicious">Shubhali havola</string>
+
+    <string name="jac_early_warning_title">Bu fayl o\'zini boshqa narsa qilib ko\'rsatmoqda</string>
+    <string name="jac_early_warning_body">Nomida “%1$s” deb yozilgan, lekin ichidagisi — %2$s. Yuklab olishning o\'zi xavfli emas, ammo uni ochmang.</string>
+    <string name="jac_early_warning_continue">Baribir yuklab olish</string>
+    <string name="jac_early_warning_cancel">Yuklab olinmasin</string>
+
+    <string name="jac_quarantine_title">Bu fayl xavfli</string>
+    <string name="jac_quarantine_body">%1$s\n\nFayl SkySecure ichida saqlanmoqda. Shu yerda turar ekan, u galereyangizga yoki boshqa ilovalarga o\'ta olmaydi.</string>
+    <string name="jac_quarantine_keep_safe">Xavfsiz qolsin</string>
+    <string name="jac_quarantine_open_anyway">Baribir ochish…</string>
+    <string name="jac_quarantine_delete">Faylni o\'chirish</string>
+
+    <string name="jac_quarantine_step">%2$d qadamdan %1$d-si</string>
+
+    <string name="jac_quarantine_confirm_title">Ishonchingiz komilmi?</string>
+    <string name="jac_quarantine_confirm_body">Agar bu soxta bank ilovasi bo\'lsa, uni ochish begona odamga SMS kodlaringizni o\'qish va hisobingizdan pul yechib olish imkonini beradi. Hech bir bank sizga o\'rnatish uchun ilova yubormaydi.</string>
+    <string name="jac_quarantine_confirm_checkbox">Xavfni tushundim va baribir ochmoqchiman</string>
+    <string name="jac_quarantine_confirm_action">Xavfli faylni ochish</string>
+    <string name="jac_quarantine_confirm_cancel">Bekor qilish</string>
+
+    <string name="jac_deepscan_title">Fayl chuqur tekshiruvga yuborilsinmi?</string>
+    <string name="jac_deepscan_body">Bu faylni chuqurroq tekshirish uchun <b>uning nusxasi telefoningizdan SkySecure tekshiruv xizmatiga yuboriladi</b>.\n\nFayl o\'sha yerda tahlil qilinadi va 24 soat ichida o\'chiriladi. U hech kimga berilmaydi va hech qanday ommaviy antivirus xizmatiga joylanmaydi.\n\nTelefoningizdan chiqishini istamagan shaxsiy ma\'lumotli fayllarni yubormang.</string>
+    <string name="jac_deepscan_file_info">Fayl: %1$s · %2$s</string>
+    <string name="jac_deepscan_accept">Yuborish va tekshirish</string>
+    <string name="jac_deepscan_decline">Yuborilmasin</string>
+    <string name="jac_deepscan_running">Tekshirilmoqda… bu bir necha daqiqa olishi mumkin</string>
+
+    <string name="jac_link_dangerous_title">Bu havola — ma\'lum firibgarlik</string>
+    <string name="jac_link_suspicious_title">Bu havola shubhali ko\'rinadi</string>
+    <string name="jac_link_reason">%1$s</string>
+    <string name="jac_link_real_destination">Bu havola aslida quyidagiga olib boradi:</string>
+    <string name="jac_link_display_mismatch">Xabarda “%1$s” deb ko\'rsatilgan, lekin havola boshqa joyga olib boradi.</string>
+    <string name="jac_link_redirect_chain">U quyidagilar orqali o\'tadi: %1$s</string>
+    <string name="jac_link_back">Orqaga</string>
+    <string name="jac_link_continue">Baribir davom etish…</string>
+    <string name="jac_link_continue_confirm">Firibgarlikka o\'xshasa ham, havola ochilsinmi?</string>
+    <string name="jac_link_continue_confirm_action">Havolani ochish</string>
+
+    <string name="jac_reason_homograph">Bu manzil %1$s bilan bir xil ko\'rinadigan harflar bilan yozilgan, lekin bu boshqa sayt.</string>
+    <string name="jac_reason_typo">Bu manzil %1$s dan bir-ikki harf bilan farq qiladi.</string>
+    <string name="jac_reason_subdomain">Manzilda %1$s ko\'rinadi, lekin haqiqiy sayt — %2$s.</string>
+    <string name="jac_reason_brand_in_domain">Bu manzil %1$s nomidan foydalanadi, lekin ularga tegishli emas.</string>
+    <string name="jac_reason_raw_ip">Bu havola sayt nomi o\'rniga raqamli manzilga olib boradi.</string>
+    <string name="jac_reason_userinfo">Bu havola o\'zining haqiqiy manzilini yashiradi.</string>
+    <string name="jac_reason_blocklist">Bu manzil ma\'lum firibgar saytlar ro\'yxatida.</string>
+
+    <string name="jac_reason_rtl">Fayl nomi uning aslida qanday fayl ekanini yashirish uchun yozilgan.</string>
+    <string name="jac_reason_double_ext">Bu hujjatga o\'xshaydi, lekin aslida ilova o\'rnatuvchi fayl.</string>
+    <string name="jac_reason_magic_mismatch">Fayl nomi .%1$s, lekin ichidagisi — %2$s.</string>
+    <string name="jac_reason_fake_bank">Bu ilova o\'zini %1$s deb ko\'rsatadi, lekin %1$s tomonidan imzolanmagan. Bu — soxta ilova.</string>
+    <string name="jac_reason_sms_accessibility">Bu ilova SMS xabarlaringizni o\'qiy oladi va ekraningizni boshqara oladi — aynan shu birikma bilan bir martalik kodlar o\'g\'irlanadi.</string>
+    <string name="jac_reason_macro">Bu hujjat ochilganda ishga tushadigan kodni o\'z ichiga oladi.</string>
+    <string name="jac_reason_archive_bomb">Bu arxiv ochilganda telefoningiz xotirasini to\'ldirish uchun tayyorlangan.</string>
+    <string name="jac_reason_impersonation_label">Bu ilova o\'zini %1$s deb ko\'rsatadi, lekin u rasmiy %1$s ilovasi emas.</string>
+    <string name="jac_reason_confusable_name">Fayl nomi o\'xshash harflar bilan %1$s ga taqlid qiladi.</string>
+    <string name="jac_reason_overlay">Bu ilova boshqa ilovalar ustidan chiza oladi — soxta kirish oynasini haqiqiysi ustiga qo\'yish shu yo\'l bilan qilinadi.</string>
+    <string name="jac_reason_device_admin">Bu ilova telefoningizni boshqarish huquqini so\'raydi, keyin uni o\'chirish qiyin bo\'ladi.</string>
+    <string name="jac_reason_unsigned">Bu ilovaning haqiqiy imzosi yo\'q, ya\'ni uni kim yaratganini bilib bo\'lmaydi.</string>
+    <string name="jac_reason_apk_installable">Bu fayl telefoningizga ilova o\'rnatadi. Hech bir bank yoki davlat xizmati sizga chat orqali o\'rnatiladigan ilova yubormaydi.</string>
+    <string name="jac_reason_remote_template">Bu hujjat ochilganda internetdan ma\'lumot yuklaydi.</string>
+    <string name="jac_reason_pdf_launch">Bu hujjat ochilganda boshqa dasturni ishga tushirmoqchi bo\'ladi.</string>
+    <string name="jac_reason_archive_traversal">Bu arxiv siz ochgan papkadan tashqariga fayl yozmoqchi bo\'ladi.</string>
+    <string name="jac_reason_archive_executable">Bu arxiv ichida ilova o\'rnatuvchi fayl bor.</string>
+    <string name="jac_reason_space_padding">Fayl nomi bo\'sh joylar bilan to\'ldirilgan, shuning uchun haqiqiy oxiri ko\'rinmaydi.</string>
+    <string name="jac_reason_dangerous_extension">Bu turdagi fayl telefoningizda kod ishga tushirishi mumkin.</string>
+
+    <string name="jac_settings_title">Xavfsizlik tekshiruvi</string>
+    <string name="jac_settings_enable">Kelayotgan fayllarni tekshirish</string>
+    <string name="jac_settings_enable_summary">Har bir kelgan faylni ochish yoki ulashishdan oldin tekshirish.</string>
+    <string name="jac_settings_links">Havolalarni tekshirish</string>
+    <string name="jac_settings_links_summary">Firibgar va soxta bank saytlari haqida ogohlantirish.</string>
+    <string name="jac_settings_secret_note">Maxfiy chatlarda tekshiruv doimo faqat qurilmangizda bajariladi. Serverlarimizga hech narsa yuborilmaydi.</string>
+    <string name="jac_settings_privacy">Biz nimani yig\'amiz</string>
+    <string name="jac_settings_privacy_summary">Faqat faylning raqamli izi va natija. Hech qachon fayl nomlari, xabarlar yoki kim yuborgani emas.</string>
+
+</resources>
