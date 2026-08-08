@@ -150,7 +150,14 @@ public final class ScanGate {
             stateStore.setResult(result.getAbsolutePath(), scan, quarantine.isQuarantined(result));
             if (!result.getAbsolutePath().equals(finalFile.getAbsolutePath())) {
                 stateStore.repoint(dialogId, finalFile.getAbsolutePath(), result.getAbsolutePath());
-                stateStore.forget(finalFile.getAbsolutePath());
+                // Keep the ORIGINAL path resolving too. It used to be forgotten
+                // here, which read as tidy and silently broke the only case that
+                // matters: quarantine moves the file, but nothing writes the new
+                // location back into the message, so FileLoader.getPathToMessage()
+                // still answers with the original cache path — the only key the
+                // bubble ever has. Dropping it meant a MALICIOUS file showed no
+                // verdict at all while clean and suspicious ones showed theirs.
+                stateStore.alias(finalFile.getAbsolutePath(), result.getAbsolutePath());
             }
 
             final File delivered = result;

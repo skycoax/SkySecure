@@ -307,7 +307,7 @@
 
     <string name="jac_scan_suspicious">Подозрительный файл</string>
 
-    <string name="jac_scan_dangerous">Опасный файл — заблокирован</string>
+    <string name="jac_scan_dangerous">В этом файле вирус</string>
 
     <string name="jac_scan_failed">Не удалось проверить</string>
 
@@ -316,7 +316,7 @@
 
     <string name="jac_scan_suspicious_masquerade">Имя файла скрывает его тип</string>
 
-    <string name="jac_scan_suspicious_installer">Этот файл устанавливает приложение</string>
+    <string name="jac_scan_suspicious_installer">В этом файле вирус</string>
 
     <string name="jac_scan_suspicious_impersonation">Приложение выдаёт себя за другое</string>
 
@@ -441,7 +441,7 @@
 
     <string name="jac_reason_unsigned">У приложения нет действительной подписи, поэтому нельзя узнать, кто его сделал.</string>
 
-    <string name="jac_reason_apk_installable">Этот файл устанавливает приложение на ваш телефон. Ни банк, ни госслужба никогда не пришлют вам приложение для установки в чате.</string>
+    <string name="jac_reason_apk_installable">Не открывайте и никому не пересылайте. Этот файл навредит вашему телефону.</string>
 
     <string name="jac_reason_remote_template">Документ загружает содержимое из интернета при открытии.</string>
 

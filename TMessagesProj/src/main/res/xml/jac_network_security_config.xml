@@ -25,12 +25,26 @@
      compromise or instruction. Public CA trust alone does not survive that;
      a pin does.
 
-  PROVISIONING — this file ships INCOMPLETE, on purpose.
+  PROVISIONING — this file ships WITHOUT a pin-set, on purpose.
 
-  The pins below are placeholders. Publishing a wrong pin is worse than
-  publishing none: it bricks the API for every installed client with no
-  server-side fix and no way to reach the users, because the update mechanism
-  is the very channel a pin failure blocks.
+  Publishing a wrong pin is worse than publishing none: it bricks the API for
+  every installed client with no server-side fix and no way to reach the
+  users, because the update mechanism is the very channel a pin failure
+  blocks.
+
+  AND — learned the hard way — a pin-set with placeholder text is not a
+  harmless reminder, it is a time bomb. Android parses this ENTIRE file the
+  first time anything in the process touches the platform network stack (first
+  HTTPS connection, first cleartext-policy check, WebView init). A pin whose
+  text is not valid base64, or does not decode to exactly 32 bytes for
+  SHA-256, makes that parse throw; the framework wraps it in a RuntimeException
+  on whichever thread asked first, and the process dies. Symptom: the app
+  installs, shows the splash, and exits about a second later — but only on
+  devices where something makes an in-process HTTPS request early (a real
+  phone), not on an emulator that happens never to leave MTProto. One bad pin
+  poisons connections to ALL hosts, not just the pinned domain. So: no
+  placeholders in this file, ever. The pin-set is ADDED at provisioning time,
+  not filled in.
 
   Before release:
 
@@ -88,10 +102,18 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">sky.bestcenter.uz</domain>
         <!--
-          Pins are still placeholders — pinning was deliberately deferred.
-          Until they are real, this domain-config contributes only the cleartext
-          refusal, which is worth having on its own. tools/preflight.mjs keeps
-          failing on the REPLACE-WITH values so the gap cannot be forgotten.
+          NO pin-set yet — pinning was deliberately deferred. Until real pins
+          exist this domain-config contributes only the cleartext refusal,
+          which is worth having on its own.
+
+          Do NOT put a pin-set with placeholder values here as a reminder: an
+          unparseable pin kills the whole app at its first network touch (see
+          the header comment). When provisioning for real, uncomment and fill:
+
+            <pin-set expiration="(cert expiry date, e.g. 2027-08-01)">
+                <pin digest="SHA-256">(leaf SPKI pin, base64, 32 bytes)</pin>
+                <pin digest="SHA-256">(offline backup key pin, base64)</pin>
+            </pin-set>
 
           Note for whoever provisions these: the certificate must NOT be
           proxied through Cloudflare when you take the pin. Behind an orange
@@ -100,10 +122,6 @@
           Cloudflare rotates it. The DNS record is currently "DNS only", which
           is the correct setting for this reason.
         -->
-        <pin-set expiration="2026-01-01">
-            <pin digest="SHA-256">REPLACE-WITH-LEAF-SPKI-PIN-BASE64=</pin>
-            <pin digest="SHA-256">REPLACE-WITH-OFFLINE-BACKUP-PIN-BASE64=</pin>
-        </pin-set>
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>

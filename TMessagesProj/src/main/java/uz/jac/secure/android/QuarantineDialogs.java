@@ -77,13 +77,13 @@ public final class QuarantineDialogs {
     public static void showBlocked(Activity activity, File file, String explanation, ReleaseListener listener) {
         Builder builder = new Builder(activity, 1);
         builder.setGlyph(JacIcons.Glyph.BLOCK, JacTheme.danger(activity));
-        builder.setTitle(activity.getString(R.string.jac_quarantine_title));
-        builder.setBody(activity.getString(R.string.jac_quarantine_body,
+        builder.setTitle(JacStrings.get(activity, R.string.jac_quarantine_title));
+        builder.setBody(JacStrings.get(activity, R.string.jac_quarantine_body,
                 explanation != null ? explanation : ""));
 
         Dialog dialog = builder.create();
-        builder.addPrimaryAction(activity.getString(R.string.jac_quarantine_keep_safe), v -> dialog.dismiss());
-        builder.addDangerAction(activity.getString(R.string.jac_quarantine_open_anyway), v -> {
+        builder.addPrimaryAction(JacStrings.get(activity, R.string.jac_quarantine_keep_safe), v -> dialog.dismiss());
+        builder.addDangerAction(JacStrings.get(activity, R.string.jac_quarantine_open_anyway), v -> {
             dialog.dismiss();
             showConfirm(activity, file, listener);
         });
@@ -100,17 +100,17 @@ public final class QuarantineDialogs {
     private static void showConfirm(Activity activity, File file, ReleaseListener listener) {
         Builder builder = new Builder(activity, 2);
         builder.setGlyph(JacIcons.Glyph.WARNING, JacTheme.danger(activity));
-        builder.setTitle(activity.getString(R.string.jac_quarantine_confirm_title));
-        builder.setBody(activity.getString(R.string.jac_quarantine_confirm_body));
+        builder.setTitle(JacStrings.get(activity, R.string.jac_quarantine_confirm_title));
+        builder.setBody(JacStrings.get(activity, R.string.jac_quarantine_confirm_body));
 
         CheckBox acknowledge = builder.addCheckbox(
-                activity.getString(R.string.jac_quarantine_confirm_checkbox));
+                JacStrings.get(activity, R.string.jac_quarantine_confirm_checkbox));
 
         Dialog dialog = builder.create();
-        builder.addPrimaryAction(activity.getString(R.string.jac_quarantine_confirm_cancel), v -> dialog.dismiss());
+        builder.addPrimaryAction(JacStrings.get(activity, R.string.jac_quarantine_confirm_cancel), v -> dialog.dismiss());
 
         TextView danger = builder.addDangerAction(
-                activity.getString(R.string.jac_quarantine_confirm_action), v -> {
+                JacStrings.get(activity, R.string.jac_quarantine_confirm_action), v -> {
                     if (!acknowledge.isChecked()) {
                         return;
                     }
@@ -169,7 +169,7 @@ public final class QuarantineDialogs {
             card.setBackground(background);
 
             TextView counter = new TextView(activity);
-            counter.setText(activity.getString(R.string.jac_quarantine_step, step, TOTAL_STEPS));
+            counter.setText(JacStrings.get(activity, R.string.jac_quarantine_step, step, TOTAL_STEPS));
             counter.setTextSize(11f);
             counter.setAllCaps(true);
             counter.setLetterSpacing(0.14f);
