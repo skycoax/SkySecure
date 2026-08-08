@@ -35,12 +35,12 @@
     <string name="jac_scan_unknown">Tekshirildi — bu fayl haqida ma\'lumot yo\'q</string>
     <string name="jac_scan_local_only">Shu qurilmada tekshirildi</string>
     <string name="jac_scan_suspicious">Shubhali fayl</string>
-    <string name="jac_scan_dangerous">Xavfli fayl — bloklandi</string>
+    <string name="jac_scan_dangerous">Bu faylda virus bor</string>
     <string name="jac_scan_failed">Tekshirib bo\'lmadi</string>
     <string name="jac_scan_overridden">Siz bu xavfli faylni ochishni tanladingiz</string>
 
     <string name="jac_scan_suspicious_masquerade">Fayl nomi turini yashiradi</string>
-    <string name="jac_scan_suspicious_installer">Bu fayl ilova o\'rnatadi</string>
+    <string name="jac_scan_suspicious_installer">Bu faylda virus bor</string>
     <string name="jac_scan_suspicious_impersonation">Bu ilova boshqasiga o\'xshab olgan</string>
 
     <string name="jac_chip_dangerous">Xavfli fayl — bloklandi</string>
@@ -107,7 +107,7 @@
     <string name="jac_reason_overlay">Bu ilova boshqa ilovalar ustidan chiza oladi — soxta kirish oynasini haqiqiysi ustiga qo\'yish shu yo\'l bilan qilinadi.</string>
     <string name="jac_reason_device_admin">Bu ilova telefoningizni boshqarish huquqini so\'raydi, keyin uni o\'chirish qiyin bo\'ladi.</string>
     <string name="jac_reason_unsigned">Bu ilovaning haqiqiy imzosi yo\'q, ya\'ni uni kim yaratganini bilib bo\'lmaydi.</string>
-    <string name="jac_reason_apk_installable">Bu fayl telefoningizga ilova o\'rnatadi. Hech bir bank yoki davlat xizmati sizga chat orqali o\'rnatiladigan ilova yubormaydi.</string>
+    <string name="jac_reason_apk_installable">Ochmang va hech kimga yubormang. Bu fayl telefoningizga zarar yetkazadi.</string>
     <string name="jac_reason_remote_template">Bu hujjat ochilganda internetdan ma\'lumot yuklaydi.</string>
     <string name="jac_reason_pdf_launch">Bu hujjat ochilganda boshqa dasturni ishga tushirmoqchi bo\'ladi.</string>
     <string name="jac_reason_archive_traversal">Bu arxiv siz ochgan papkadan tashqariga fayl yozmoqchi bo\'ladi.</string>

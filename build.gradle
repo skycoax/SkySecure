@@ -16,3 +16,69 @@ buildscript {
 repositories {
     google()
 }
+
+// ---------------------------------------------------------------------------
+// SkySecure: build one CPU architecture instead of four while developing.
+// ---------------------------------------------------------------------------
+//
+//     ./gradlew :TMessagesProj_App:assembleAfatDebug -PjacAbi=arm64
+//
+// A debug APK carries armeabi-v7a, arm64-v8a, x86 and x86_64, and libtmessages
+// alone is ~52 MB in each — about 120 MB of APK, three quarters of which the
+// device you are testing on cannot execute. You pay for the dead weight twice:
+// once while Gradle strips and packages it, and again while adb pushes it over
+// the cable. Cutting to the one architecture that phone actually runs takes the
+// APK to roughly 65 MB and takes the install with it.
+//
+// Values:
+//
+//     arm64   every phone since about 2017 — the normal choice
+//     arm32   genuinely old hardware
+//     x86_64  most emulators, including MEmu
+//     all     the default, and what a release MUST ship
+//
+// Pass nothing and nothing changes.
+ext.jacAbiFilters = {
+    def requested = project.hasProperty('jacAbi') ? project.property('jacAbi').toString() : 'all'
+    switch (requested) {
+        case 'arm64':  return ['arm64-v8a']
+        case 'arm32':  return ['armeabi-v7a']
+        case 'x86_64': return ['x86_64']
+        case 'all':    return ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
+        default:
+            throw new GradleException(
+                    "Unknown -PjacAbi=${requested}. Use arm64, arm32, x86_64, or all.")
+    }
+}
+
+// The flag applies to every build type, release included — abiFilters lives in
+// defaultConfig and in the afat flavor, not in a debug-only block. So a release
+// built with the flag still set silently ships one architecture: it installs
+// perfectly on the phone you tested with, and on nobody else's. Nothing about
+// the APK looks wrong, and the way you find out is that installs fail for
+// strangers.
+//
+// A convenience flag that can only cost you a bad release when you forget to
+// remove it is not worth having, so forgetting is made impossible instead.
+gradle.taskGraph.whenReady { graph ->
+    def requested = project.hasProperty('jacAbi') ? project.property('jacAbi').toString() : 'all'
+    if (requested == 'all') {
+        return
+    }
+    // Matching 'release' and 'standalone' only, and deliberately NOT 'bundle':
+    // a debug graph contains :TMessagesProj:bundleLibCompileToJarDebug and
+    // bundleLibRuntimeToJarDebug, which are library-internal jar packaging and
+    // have nothing to do with an app bundle. Including 'bundle' here made every
+    // debug build fail. An AAB is caught anyway — bundleAfatRelease contains
+    // 'release'.
+    def releasing = graph.allTasks.any { task ->
+        def name = task.name.toLowerCase()
+        name.contains('release') || name.contains('standalone')
+    }
+    if (releasing) {
+        throw new GradleException(
+                "-PjacAbi=${requested} is a development flag and this is a release build.\n" +
+                "A release must carry every architecture. Drop the flag, or pass -PjacAbi=all\n" +
+                "if you are deliberately building a single-architecture package.")
+    }
+}

@@ -596,6 +596,54 @@
 
         <receiver android:name=".ShortcutResultReceiver" android:exported="false"/>
 
+        <!--
+          SkySecure: remove Firebase's auto-initialiser.
+
+          Push cannot work without our own Firebase project, and we do not have
+          one. With the google-services plugin disabled there is no
+          google_app_id resource, so FirebaseInitProvider would log
+          "FirebaseApp initialization unsuccessful" and return. Removing it
+          outright makes process startup deterministic rather than dependent on
+          a library's error handling.
+
+          Telegram's own FirebaseApp.initializeApp and
+          FirebaseMessaging.getInstance calls are wrapped in catch (Throwable)
+          (PushListenerController.java:1695-1714), so they degrade quietly.
+
+          A NOTE ON WHY THIS BLOCK EXISTS, because the reason was wrong at
+          first: it was added believing a fabricated google-services entry had
+          crashed the app at launch after an applicationId change. Reading the
+          library disproved that — FirebaseInitProvider does not validate
+          google_app_id, and the only startup check (FirebaseInstallations) is
+          format-only: app id contains ":", api key matches /\AA[\w-]{38}\z/,
+          project id non-empty. Telegram's values pass all three, and the check
+          is offline, so it behaves identically on an emulator and a phone and
+          cannot explain a crash that happened only on the phone.
+
+          The launch crash was later EXPLAINED, and it was neither Firebase
+          nor any pre-Application provider: res/xml/jac_network_security_config
+          shipped a pin-set with REPLACE-WITH placeholder pins. Android parses
+          that whole file on the process's first platform network touch; a pin
+          that is not valid base64 (or not 32 bytes decoded) makes the parse
+          throw, the framework wraps it in a RuntimeException, and the process
+          dies ~1s after launch — on a real phone, where something makes an
+          in-process HTTPS request early, and not on an emulator that stays on
+          MTProto. The pin-set is removed until real pins are provisioned; see
+          the comments in that file before putting anything back.
+
+          Worth keeping regardless: a placeholder app id (no ":" or a
+          malformed key) WOULD throw IllegalArgumentException on the main
+          thread inside ContentProvider.onCreate, uncatchable. This block makes
+          that failure mode unreachable.
+
+          DELETE THIS BLOCK when a real Firebase project is configured.
+        -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            android:exported="false"
+            tools:node="remove" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

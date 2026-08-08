@@ -49,14 +49,30 @@ public final class ScanUi {
         public final boolean actionable;
         /** Short form for the chat-list row; never more than a few words. */
         public final String chip;
+        /**
+         * Take over the whole bubble instead of sitting under the file row.
+         *
+         * Reserved for MALICIOUS, and rationed on purpose. Covering the
+         * sender's own text is right when that text is the lure — "send this to
+         * your family" — and wrong the moment it fires on something legitimate,
+         * because then it covers a message the user wanted to read. A scale
+         * whose top step is common is a scale with no top step.
+         */
+        public final boolean overlay;
 
         Presentation(JacIcons.Glyph glyph, int colour, String title, String body, boolean actionable, String chip) {
+            this(glyph, colour, title, body, actionable, chip, false);
+        }
+
+        Presentation(JacIcons.Glyph glyph, int colour, String title, String body,
+                     boolean actionable, String chip, boolean overlay) {
             this.glyph = glyph;
             this.colour = colour;
             this.title = title;
             this.body = body;
             this.actionable = actionable;
             this.chip = chip;
+            this.overlay = overlay;
         }
     }
 
@@ -152,10 +168,10 @@ public final class ScanUi {
             return new Presentation(
                     JacIcons.Glyph.SPINNER,
                     JacTheme.neutral(context),
-                    context.getString(R.string.jac_scan_scanning),
+                    JacStrings.get(context, R.string.jac_scan_scanning),
                     null,
                     false,
-                    context.getString(R.string.jac_scan_scanning));
+                    JacStrings.get(context, R.string.jac_scan_scanning));
         }
 
         ScanFinding lead = leadFinding(state);
@@ -168,10 +184,10 @@ public final class ScanUi {
             return new Presentation(
                     JacIcons.Glyph.WARNING,
                     JacTheme.danger(context),
-                    context.getString(R.string.jac_scan_overridden),
+                    JacStrings.get(context, R.string.jac_scan_overridden),
                     explanation,
                     false,
-                    context.getString(R.string.jac_chip_dangerous));
+                    JacStrings.get(context, R.string.jac_chip_dangerous));
         }
 
         switch (state.verdict) {
@@ -179,28 +195,48 @@ public final class ScanUi {
                 return new Presentation(
                         JacIcons.Glyph.BLOCK,
                         JacTheme.danger(context),
-                        context.getString(R.string.jac_scan_dangerous),
+                        JacStrings.get(context, R.string.jac_scan_dangerous),
                         explanation,
-                        state.quarantined,
-                        context.getString(R.string.jac_chip_dangerous));
+                        // No buttons. Removed at the product owner's direction:
+                        // a warning with an "open anyway" next to it reads as a
+                        // choice, and offering the choice at all is what makes
+                        // taking it feel normal. The verdict states what the
+                        // file is and stops there.
+                        false,
+                        JacStrings.get(context, R.string.jac_chip_dangerous));
 
             case SUSPICIOUS:
+                // An installable package gets the buttons even though it is not
+                // quarantined.
+                //
+                // Without them the verdict is a label: it says "this installs an
+                // app", the file remains one tap away, and the tap that opens it
+                // is the same one the user was already reaching for. A sentence
+                // the user reads on their way to doing the thing anyway is not a
+                // barrier.
+                //
+                // The pair is what makes it a decision — "Keep me safe" is the
+                // large, filled, default option, and continuing costs a
+                // deliberate reach for the quieter one. We stop short of
+                // quarantining: ScanPolicy reserves that for the unambiguous,
+                // and a quarantine that fires on every APK teaches people to
+                // click past it, which is worse than not having it.
                 return new Presentation(
                         JacIcons.Glyph.WARNING,
-                        JacTheme.warning(context),
+                        JacTheme.danger(context),
                         suspiciousTitle(context, lead),
                         explanation,
                         false,
-                        context.getString(R.string.jac_chip_suspicious));
+                        JacStrings.get(context, R.string.jac_chip_suspicious));
 
             case CLEAN:
                 return new Presentation(
                         JacIcons.Glyph.CHECK,
                         JacTheme.success(context),
-                        context.getString(R.string.jac_scan_clean),
+                        JacStrings.get(context, R.string.jac_scan_clean),
                         null,
                         false,
-                        context.getString(R.string.jac_chip_clean));
+                        JacStrings.get(context, R.string.jac_chip_clean));
 
             case UNKNOWN:
             default:
@@ -213,10 +249,10 @@ public final class ScanUi {
                 return new Presentation(
                         localOnly ? JacIcons.Glyph.DEVICE : JacIcons.Glyph.CHECK,
                         JacTheme.neutral(context),
-                        context.getString(localOnly ? R.string.jac_scan_local_only : R.string.jac_scan_unknown),
+                        JacStrings.get(context, localOnly ? R.string.jac_scan_local_only : R.string.jac_scan_unknown),
                         explanation,
                         false,
-                        context.getString(localOnly ? R.string.jac_chip_local : R.string.jac_chip_unknown));
+                        JacStrings.get(context, localOnly ? R.string.jac_chip_local : R.string.jac_chip_unknown));
         }
     }
 
@@ -229,7 +265,7 @@ public final class ScanUi {
      */
     private static String suspiciousTitle(Context context, ScanFinding lead) {
         if (lead == null) {
-            return context.getString(R.string.jac_scan_suspicious);
+            return JacStrings.get(context, R.string.jac_scan_suspicious);
         }
         if (SignalCodes.MAGIC_MISMATCH.equals(lead.code)
                 || SignalCodes.EXECUTABLE_CONTENT.equals(lead.code)
@@ -237,19 +273,19 @@ public final class ScanUi {
                 || SignalCodes.RTL_OVERRIDE.equals(lead.code)
                 || SignalCodes.BIDI_CONTROL.equals(lead.code)
                 || SignalCodes.SPACE_PADDING.equals(lead.code)) {
-            return context.getString(R.string.jac_scan_suspicious_masquerade);
+            return JacStrings.get(context, R.string.jac_scan_suspicious_masquerade);
         }
         if (SignalCodes.APK_INSTALLABLE.equals(lead.code)
                 || SignalCodes.APK_DANGEROUS_PERMISSIONS.equals(lead.code)
                 || SignalCodes.APK_SMS_AND_ACCESSIBILITY.equals(lead.code)
                 || SignalCodes.APK_OVERLAY_COMBO.equals(lead.code)
                 || SignalCodes.APK_DEVICE_ADMIN.equals(lead.code)) {
-            return context.getString(R.string.jac_scan_suspicious_installer);
+            return JacStrings.get(context, R.string.jac_scan_suspicious_installer);
         }
         if (SignalCodes.APK_IMPERSONATION_LABEL.equals(lead.code)) {
-            return context.getString(R.string.jac_scan_suspicious_impersonation);
+            return JacStrings.get(context, R.string.jac_scan_suspicious_impersonation);
         }
-        return context.getString(R.string.jac_scan_suspicious);
+        return JacStrings.get(context, R.string.jac_scan_suspicious);
     }
 
     /**
@@ -353,13 +389,13 @@ public final class ScanUi {
             return fallbackDetail;
         }
         if (template.argCount == 0) {
-            return context.getString(template.stringRes);
+            return JacStrings.get(context, template.stringRes);
         }
         if (finding.args.length < template.argCount) {
             return fallbackDetail;
         }
         Object[] args = new Object[template.argCount];
         System.arraycopy(finding.args, 0, args, 0, template.argCount);
-        return context.getString(template.stringRes, args);
+        return JacStrings.get(context, template.stringRes, args);
     }
 }

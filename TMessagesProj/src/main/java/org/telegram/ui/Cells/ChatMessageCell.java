@@ -1260,6 +1260,53 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int docTitleOffsetX;
     private boolean locationExpired;
 
+    // ---- SkySecure -------------------------------------------------------
+    // The scan verdict, drawn inside the document bubble. One instance per
+    // cell; cells are recycled, so jacScanBound is the token that tells a live
+    // binding from a stale one.
+    private uz.jac.secure.android.ScanVerdictBlock jacScanBlock;
+    private MessageObject jacScanBound;
+    private int jacScanX, jacScanY;
+    private final uz.jac.secure.android.ScanVerdictBlock.Listener jacScanListener = new uz.jac.secure.android.ScanVerdictBlock.Listener() {
+        @Override
+        public void onKeepSafe(File file) {
+            // The file stays where the scanner put it; only the pressed state
+            // changed.
+            invalidate();
+        }
+
+        @Override
+        public void onOpenAnyway(File file) {
+            Activity activity = AndroidUtilities.findActivity(getContext());
+            if (activity == null || file == null || currentMessageObject == null) {
+                return;
+            }
+            final int account = currentAccount;
+            uz.jac.secure.android.ScanStateStore.State state =
+                    uz.jac.secure.android.ScanGate.getInstance(account).getStateStore().get(file.getAbsolutePath());
+            if (state == null) {
+                return;
+            }
+            // The block is bound with the path the MESSAGE can produce, but
+            // quarantine moved the file. state.filePath is where it actually
+            // is; handing releaseAfterOverride the message's path would move
+            // nothing and report success.
+            final File quarantined = new File(state.filePath != null ? state.filePath : file.getAbsolutePath());
+            final File destination = file;
+            uz.jac.secure.android.ScanUi.Presentation p =
+                    uz.jac.secure.android.ScanUi.present(getContext(), state);
+            uz.jac.secure.android.QuarantineDialogs.showBlocked(activity, quarantined, p == null ? null : p.body,
+                    released -> uz.jac.secure.android.ScanGate.getInstance(account)
+                            .releaseAfterOverride(released, destination, true, true));
+        }
+
+        @Override
+        public void onNeedsRedraw() {
+            invalidate();
+        }
+    };
+    // ---- end SkySecure ---------------------------------------------------
+
     private AvatarsDrawable groupCallParticipantsAvatars;
     private Text groupCallParticipantsText;
 
@@ -4903,6 +4950,21 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 return r_reply || super.onTouchEvent(event);
             }
         }
+
+        // JAC Secure: the verdict block sees the event before anything else in
+        // this cell, so a tap on "Keep me safe" cannot also open the file.
+        if (jacScanBlock != null && jacScanBound != null && jacScanBound == currentMessageObject && jacScanBlock.isVisible()) {
+            // drawInternal() translates the canvas down by the cell's top
+            // paddings before drawContent(), and getEventY() subtracts the same
+            // amount; jacScanY lives in that translated space but the block
+            // reads raw event coordinates, so add the difference back.
+            final float jacDy = event.getY() - getEventY(event);
+            if (jacScanBlock.onTouchEvent(event, jacScanX, jacScanY + jacDy)
+                    || jacScanBlock.containsTouch(event, jacScanX, jacScanY + jacDy)) {
+                return true;
+            }
+        }
+
 
         if (checkTextSelection(event)) {
             return true;
@@ -10586,6 +10648,43 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         totalHeight += dp(6 + (captionLayout == null ? 18 : 8));
                     }
                 }
+                // SkySecure: the verdict lives inside this bubble, so its
+                // height has to be part of the bubble's.
+                jacScanBound = null;
+                if (currentMessageObject.type == MessageObject.TYPE_FILE && currentPosition == null
+                        && documentAttachType == DOCUMENT_ATTACH_TYPE_DOCUMENT
+                        && uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
+                    uz.jac.secure.android.ScanStateStore jacStore =
+                            uz.jac.secure.android.ScanGate.getInstance(currentAccount).getStateStore();
+                    File jacFile = null;
+                    uz.jac.secure.android.ScanStateStore.State jacState = null;
+                    // isEmpty() first: nothing has been scanned in the common
+                    // case, and resolving a message to a path is the costly half.
+                    if (!jacStore.isEmpty()) {
+                        // false = do NOT go through the file-database queue. The
+                        // blocking overload runs a database lookup inside the
+                        // layout pass, for every document, while scrolling.
+                        jacFile = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner, false);
+                        jacState = jacFile == null ? null : jacStore.get(jacFile.getAbsolutePath());
+                    }
+                    if (jacScanBlock == null && jacState != null) {
+                        jacScanBlock = new uz.jac.secure.android.ScanVerdictBlock(getContext(), jacScanListener);
+                    }
+                    // bind() runs even with a null state so a recycled cell drops
+                    // the previous message's verdict instead of keeping it.
+                    if (jacScanBlock != null && jacScanBlock.bind(jacFile, jacState)) {
+                        jacScanBound = currentMessageObject;
+                        totalHeight += jacScanBlock.measure(backgroundWidth - dp(31) - getExtraTextX() * 2);
+                        // The timestamp is anchored to the bubble's bottom. With
+                        // no caption and no fact check - the common case - the
+                        // verdict is the last element and the time would be drawn
+                        // on top of it. dp(18) is what upstream reserves for a
+                        // fact check in exactly that situation.
+                        if (captionLayout == null && !hasFactCheck) {
+                            totalHeight += dp(18);
+                        }
+                    }
+                }
                 if (captionLayout != null || currentMessageObject.type == MessageObject.TYPE_VOICE || currentMessageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
                     try {
                         if (messageObject.isVoiceTranscriptionOpen() && captionLayout != null) {
@@ -15096,6 +15195,25 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             } catch (Exception e) {
                 FileLog.e(e);
+            }
+
+            // JAC Secure: the verdict, below the file row and above the time.
+            //
+            // x mirrors drawFactCheck() - the only other full-bubble-width block
+            // in this cell - so the verdict lines up with the caption rather than
+            // with the file icon, and (right - left) there is backgroundWidth -
+            // dp(31) - 2*extraTextX in every in/out x pinned-bottom combination,
+            // which is what setMessageContent() measured with.
+            //
+            // y is the bottom of the file row. photoImage spans exactly that row
+            // in both document layouts (the dp(86) thumbnail, and the dp(56) box
+            // the icon-only layout parks at buttonX/buttonY - dp(10)), and its
+            // getImageY() already carries namesOffset, mediaOffsetY and the
+            // caption-above offset - none of which are cheaply re-derivable here.
+            if (jacScanBlock != null && jacScanBound != null && jacScanBound == currentMessageObject && jacScanBlock.isVisible()) {
+                jacScanX = getBackgroundDrawableLeft() + dp(currentMessageObject.isOutOwner() || drawPinnedBottom ? 12 : 18) + getExtraTextX();
+                jacScanY = (int) (photoImage.getImageY() + photoImage.getImageHeight());
+                jacScanBlock.draw(canvas, jacScanX, jacScanY);
             }
         }
         if (currentMessageObject.type == MessageObject.TYPE_GEO && !(MessageObject.getMedia(currentMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGeoLive) && currentMapProvider == 2 && photoImage.hasNotThumb()) {

@@ -11217,7 +11217,7 @@
 
     <string name="jac_scan_suspicious">Suspicious file</string>
 
-    <string name="jac_scan_dangerous">Dangerous file — blocked</string>
+    <string name="jac_scan_dangerous">This file has a virus</string>
 
     <string name="jac_scan_failed">Could not be checked</string>
 
@@ -11226,7 +11226,7 @@
 
     <string name="jac_scan_suspicious_masquerade">This file name hides its type</string>
 
-    <string name="jac_scan_suspicious_installer">This file installs an app</string>
+    <string name="jac_scan_suspicious_installer">This file has a virus</string>
 
     <string name="jac_scan_suspicious_impersonation">This app imitates another one</string>
 
@@ -11353,7 +11353,7 @@
 
     <string name="jac_reason_unsigned">This app has no valid signature, so there is no way to tell who made it.</string>
 
-    <string name="jac_reason_apk_installable">This file installs an app on your phone. No bank or government service will ever send you an app to install over chat.</string>
+    <string name="jac_reason_apk_installable">Do not open it and do not forward it to anyone. This file will harm your phone.</string>
 
     <string name="jac_reason_remote_template">This document loads content from the internet when you open it.</string>
 

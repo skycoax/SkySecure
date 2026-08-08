@@ -123,6 +123,15 @@ android {
 
         multiDexEnabled true
 
+        // SkySecure: restricts the CMake build itself, not just packaging.
+        // Without this the NDK still compiles all four architectures and only
+        // the app module throws three of them away — the slowest part of a
+        // clean build, done for nothing. See jacAbiFilters in the root
+        // build.gradle; with no -PjacAbi flag this is the same four as before.
+        ndk {
+            abiFilters(*rootProject.ext.jacAbiFilters())
+        }
+
         externalNativeBuild {
             cmake {
                 version '3.10.2'
@@ -138,7 +147,14 @@ android {
             shrinkResources false
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
-            ndk.debugSymbolLevel = 'FULL'
+            // SkySecure: 'FULL' exists so Play can symbolicate crashes from a
+            // release. On a debug build it only fills
+            // build/outputs/native-debug-symbols/ with a 93 MB zip that nobody
+            // uploads anywhere — measured 13 s per architecture, every time the
+            // native libraries are re-merged. LLDB is unaffected: it reads the
+            // unstripped libraries out of .cxx/Debug/*/obj/<abi>/, not from here.
+            // Release build types keep 'FULL'.
+            ndk.debugSymbolLevel = 'NONE'
             buildConfigField "String", "BUILD_VERSION_STRING", "\"" + APP_VERSION_NAME + "\""
             buildConfigField "String", "APP_CENTER_HASH", "\"\""
             buildConfigField "String", "BETA_URL", "\"" + getProps("BETA_PRIVATE_URL") + "\""
@@ -245,7 +261,12 @@ def getProps(String propName) {
         return "";
     }
 }
-apply plugin: 'com.google.gms.google-services'
+// SkySecure: google-services disabled. Push needs OUR OWN Firebase project;
+// until there is one the plugin would only bake Telegram google_app_id,
+// API key and OAuth client id into an APK published under our package name.
+// Without the generated google_app_id resource FirebaseInitProvider logs
+// "FirebaseApp initialization unsuccessful" and returns - it does not throw.
+// apply plugin: 'com.google.gms.google-services'
 
 task checkVisibility {
     doFirst {

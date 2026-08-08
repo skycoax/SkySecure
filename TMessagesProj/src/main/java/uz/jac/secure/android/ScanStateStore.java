@@ -53,8 +53,21 @@ public final class ScanStateStore {
         public final boolean overridden;
         public final List<ScanFinding> findings;
 
+        /**
+         * Where the file actually is now.
+         *
+         * Not the same as the key it was looked up by. A quarantined file is
+         * reachable under its original path (see {@link #alias}) because that
+         * is the only path a message can produce, but releasing it needs the
+         * path it was MOVED to. Without this the "Open anyway" button hands
+         * {@code releaseAfterOverride} the original path — a file that is no
+         * longer there — and the release silently does nothing, which is the
+         * one outcome worse than not offering the button at all.
+         */
+        public final String filePath;
+
         State(boolean scanning, Verdict verdict, String detail, String source,
-              boolean quarantined, boolean overridden, List<ScanFinding> findings) {
+              boolean quarantined, boolean overridden, List<ScanFinding> findings, String filePath) {
             this.scanning = scanning;
             this.verdict = verdict;
             this.detail = detail;
@@ -62,6 +75,7 @@ public final class ScanStateStore {
             this.quarantined = quarantined;
             this.overridden = overridden;
             this.findings = findings != null ? findings : Collections.<ScanFinding>emptyList();
+            this.filePath = filePath;
         }
 
         public boolean has(String signalCode) {
@@ -120,6 +134,36 @@ public final class ScanStateStore {
         return states.get(path);
     }
 
+    /**
+     * Record that a quarantined file used to live at {@code originalPath}.
+     *
+     * <h3>Why this exists, and why forgetting the old path was a bug</h3>
+     *
+     * Quarantine MOVES the file. The scan state was then filed under the new,
+     * app-private path and the old key was dropped — which looked tidy and was
+     * exactly wrong, because nothing writes the new path back into the message.
+     * {@code FileLoader.getPathToMessage()} still answers with the original
+     * cache path, so that is the only key the message bubble ever has.
+     *
+     * The consequence was the worst possible shape of bug: clean, suspicious
+     * and still-scanning verdicts all rendered fine, and the MALICIOUS
+     * case — the one the product exists for — rendered nothing at all. A
+     * quarantined file simply refused to open, with no explanation anywhere.
+     *
+     * So the state stays reachable under both keys. The alias is not a copy:
+     * both map to the same State instance, so an override published later is
+     * visible through either path.
+     */
+    void alias(String originalPath, String quarantinedPath) {
+        if (originalPath == null || quarantinedPath == null || originalPath.equals(quarantinedPath)) {
+            return;
+        }
+        State state = states.get(quarantinedPath);
+        if (state != null) {
+            states.put(originalPath, state);
+        }
+    }
+
     /** State of the most recently scanned file in this conversation, or null. */
     public State forDialog(long dialogId) {
         String path = latestByDialog.get(dialogId);
@@ -143,7 +187,7 @@ public final class ScanStateStore {
         if (path == null || path.isEmpty()) {
             return;
         }
-        states.put(path, new State(false, verdict, detail, source, quarantined, overridden, null));
+        states.put(path, new State(false, verdict, detail, source, quarantined, overridden, null, path));
     }
 
     /** Snapshot for persisting; iteration order is unspecified. */
@@ -167,12 +211,12 @@ public final class ScanStateStore {
         if (dialogId != 0) {
             latestByDialog.put(dialogId, path);
         }
-        publish(path, new State(true, Verdict.UNKNOWN, null, null, false, false, null));
+        publish(path, new State(true, Verdict.UNKNOWN, null, null, false, false, null, path));
     }
 
     void setResult(String path, ScanResult result, boolean quarantined) {
         publish(path, new State(false, result.getVerdict(), result.getDetail(), result.getSource(),
-                quarantined, false, ScanFinding.of(result)));
+                quarantined, false, ScanFinding.of(result), path));
     }
 
     void markOverridden(String path) {
@@ -184,7 +228,23 @@ public final class ScanStateStore {
         // The verdict is preserved after an override. The file is accessible,
         // but it is still known-bad and the bubble keeps saying so — hiding the
         // warning once the user has clicked past it would be the wrong lesson.
-        publish(path, new State(false, verdict, detail, source, false, true, findings));
+        State updated = new State(false, verdict, detail, source, false, true, findings,
+                previous != null ? previous.filePath : path);
+
+        // Every key that pointed at the old state, not just the one passed in.
+        // A quarantined file is reachable under two paths (see alias()), and
+        // updating only one would leave the bubble — which looks the file up by
+        // the original path — still showing a live block on a file the user has
+        // just been allowed to open, with a "Keep me safe" button that no longer
+        // does anything.
+        if (previous != null) {
+            for (Map.Entry<String, State> entry : states.entrySet()) {
+                if (entry.getValue() == previous) {
+                    publish(entry.getKey(), updated);
+                }
+            }
+        }
+        publish(path, updated);
     }
 
     /**

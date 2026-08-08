@@ -110,10 +110,10 @@ public final class ScanDialogMarker {
         presentation = new ScanUi.Presentation(
                 JacIcons.Glyph.WARNING,
                 JacTheme.warning(context),
-                context.getString(org.telegram.messenger.R.string.jac_chip_link_suspicious),
+                JacStrings.get(context, org.telegram.messenger.R.string.jac_chip_link_suspicious),
                 null,
                 false,
-                context.getString(org.telegram.messenger.R.string.jac_chip_link_suspicious));
+                JacStrings.get(context, org.telegram.messenger.R.string.jac_chip_link_suspicious));
         animating = false;
         chip = true;
         textPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);

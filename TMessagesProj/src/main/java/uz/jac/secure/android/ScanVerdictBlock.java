@@ -77,6 +77,9 @@ public final class ScanVerdictBlock {
     private static final int BUTTON_HEIGHT_DP = 34;
     private static final int BUTTON_RADIUS_DP = 8;
     private static final int SPINNER_PERIOD_MS = 900;
+    private static final int PROGRESS_HEIGHT_DP = 3;
+    /** Slower than the spinner: two things at the same tempo read as one. */
+    private static final int PROGRESS_PERIOD_MS = 1400;
 
     private final Context context;
     private final Listener listener;
@@ -91,6 +94,9 @@ public final class ScanVerdictBlock {
     private final RectF safeButton = new RectF();
     private final RectF openButton = new RectF();
     private final RectF scratch = new RectF();
+    private final RectF overlayBounds = new RectF();
+    private final TextPaint overlayTitlePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+    private final TextPaint overlayBodyPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
     private File file;
     private ScanUi.Presentation presentation;
@@ -118,9 +124,13 @@ public final class ScanVerdictBlock {
         buttonPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         buttonPaint.setTextSize(JacTheme.sp(context, 13.5f));
         iconPaint.setStyle(Paint.Style.STROKE);
+        overlayTitlePaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        overlayTitlePaint.setTextSize(JacTheme.sp(context, 19f));
+        overlayBodyPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        overlayBodyPaint.setTextSize(JacTheme.sp(context, 14f));
 
-        safeLabel = context.getString(R.string.jac_quarantine_keep_safe);
-        openLabel = context.getString(R.string.jac_quarantine_open_anyway);
+        safeLabel = JacStrings.get(context, R.string.jac_quarantine_keep_safe);
+        openLabel = JacStrings.get(context, R.string.jac_quarantine_open_anyway);
     }
 
     /**
@@ -181,6 +191,9 @@ public final class ScanVerdictBlock {
 
         int y = JacTheme.dp(context, 10);              // gap under the hairline
         y += Math.max(icon, titleLayout.getHeight());
+        if (scanning) {
+            y += JacTheme.dp(context, 8) + JacTheme.dp(context, PROGRESS_HEIGHT_DP);
+        }
         if (bodyLayout != null) {
             y += JacTheme.dp(context, 5) + bodyLayout.getHeight();
         }
@@ -239,6 +252,12 @@ public final class ScanVerdictBlock {
 
         y += Math.max(icon, titleLayout.getHeight());
 
+        if (scanning) {
+            y += JacTheme.dp(context, 8);
+            drawProgress(canvas, y);
+            y += JacTheme.dp(context, PROGRESS_HEIGHT_DP);
+        }
+
         if (bodyLayout != null) {
             y += JacTheme.dp(context, 5);
             int bodySaved = canvas.save();
@@ -256,6 +275,212 @@ public final class ScanVerdictBlock {
         }
 
         canvas.restoreToCount(saved);
+    }
+
+    /**
+     * Does this verdict take over the whole bubble?
+     *
+     * True only for MALICIOUS. The loud treatment is rationed on purpose: it
+     * covers the sender's own text, which on a real attack is the lure — "send
+     * this to your family" — and covering that is the point. But the same
+     * treatment on a legitimate APK covers a message the user wanted to read,
+     * and two of those teach them to look past red screens. The scale only
+     * works if the top of it is rare.
+     */
+    public boolean isOverlay() {
+        return presentation != null && presentation.overlay;
+    }
+
+    /**
+     * The full-bubble danger screen.
+     *
+     * Drawn by the host cell AFTER everything else, over the bubble's own
+     * bounds, so it covers the file row, the caption and the timestamp.
+     *
+     * The scrim is heavy (92%) rather than a light tint. A translucent warning
+     * over readable text is a warning the eye reads past to get to the text —
+     * and the text under this one is written by someone trying to get the file
+     * opened. If it is worth covering at all it is worth covering properly.
+     *
+     * @return the rectangle the buttons occupy, so the host can hit-test it
+     */
+    public void drawOverlay(Canvas canvas, float left, float top, float right, float bottom) {
+        if (presentation == null) {
+            return;
+        }
+        overlayBounds.set(left, top, right, bottom);
+
+        int saved = canvas.save();
+        canvas.clipRect(overlayBounds);
+
+        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setColor(JacTheme.wash(JacTheme.screen(context), 92));
+        canvas.drawRect(overlayBounds, fillPaint);
+
+        float pad = JacTheme.dp(context, 16);
+        float innerWidth = Math.max(1f, overlayBounds.width() - pad * 2);
+        float cx = overlayBounds.centerX();
+
+        // Laid out from the top rather than centred vertically: a bubble whose
+        // caption is three lines long is much taller than one without, and a
+        // centred block would float in the middle of an otherwise empty red
+        // rectangle. Anchoring to the top keeps it next to the file it is about.
+        float y = overlayBounds.top + pad;
+
+        int glyph = JacTheme.dp(context, 44);
+        iconBounds.set(cx - glyph / 2f, y, cx + glyph / 2f, y + glyph);
+        iconPaint.setColor(JacTheme.danger(context));
+        iconPaint.setStyle(Paint.Style.STROKE);
+        JacIcons.draw(canvas, JacIcons.Glyph.SHIELD, iconBounds, iconPaint);
+        y += glyph + JacTheme.dp(context, 12);
+
+        overlayTitlePaint.setColor(JacTheme.danger(context));
+        StaticLayout title = buildLayout(presentation.title, overlayTitlePaint, (int) innerWidth,
+                Layout.Alignment.ALIGN_CENTER);
+        int titleSaved = canvas.save();
+        canvas.translate(overlayBounds.left + pad, y);
+        title.draw(canvas);
+        canvas.restoreToCount(titleSaved);
+        y += title.getHeight() + JacTheme.dp(context, 10);
+
+        if (presentation.body != null && !presentation.body.isEmpty()) {
+            overlayBodyPaint.setColor(JacTheme.danger(context));
+            StaticLayout body = buildLayout(presentation.body, overlayBodyPaint, (int) innerWidth,
+                    Layout.Alignment.ALIGN_CENTER);
+            int bodySaved = canvas.save();
+            canvas.translate(overlayBounds.left + pad, y);
+            body.draw(canvas);
+            canvas.restoreToCount(bodySaved);
+            y += body.getHeight() + JacTheme.dp(context, 14);
+        }
+
+        if (presentation.actionable) {
+            // Stacked, not side by side. The overlay is as wide as the bubble
+            // and the safe action should be the full width of it - a pair of
+            // half-width buttons reads as a choice between equals, which is
+            // exactly what this screen is not.
+            int h = JacTheme.dp(context, 44);
+            float radius = JacTheme.dp(context, 10);
+
+            safeButton.set(overlayBounds.left + pad, y, overlayBounds.right - pad, y + h);
+            fillPaint.setColor(JacTheme.primary(context));
+            canvas.drawRoundRect(safeButton, radius, radius, fillPaint);
+            if (pressedButton == 1) {
+                fillPaint.setColor(JacTheme.wash(0xFF000000, 18));
+                canvas.drawRoundRect(safeButton, radius, radius, fillPaint);
+            }
+            drawCentredLabel(canvas, safeButton, safeLabel, JacTheme.onPrimary(context));
+            y += h + JacTheme.dp(context, 8);
+
+            openButton.set(overlayBounds.left + pad, y, overlayBounds.right - pad, y + h);
+            if (pressedButton == 2) {
+                fillPaint.setColor(JacTheme.wash(JacTheme.danger(context), 14));
+                canvas.drawRoundRect(openButton, radius, radius, fillPaint);
+            }
+            drawCentredLabel(canvas, openButton, openLabel, JacTheme.wash(JacTheme.danger(context), 75));
+        } else {
+            safeButton.setEmpty();
+            openButton.setEmpty();
+        }
+
+        canvas.restoreToCount(saved);
+    }
+
+    private void drawCentredLabel(Canvas canvas, RectF bounds, String label, int colour) {
+        buttonPaint.setColor(colour);
+        float available = Math.max(0f, bounds.width() - JacTheme.dp(context, 12));
+        String text = TextUtils.ellipsize(label, buttonPaint, available, TextUtils.TruncateAt.END).toString();
+        Paint.FontMetrics metrics = buttonPaint.getFontMetrics();
+        canvas.drawText(text,
+                bounds.centerX() - buttonPaint.measureText(text) / 2f,
+                bounds.centerY() - (metrics.ascent + metrics.descent) / 2f,
+                buttonPaint);
+    }
+
+    /**
+     * Touch handling while the overlay is up.
+     *
+     * Everything inside the overlay is consumed, buttons or not: the whole
+     * point is that no tap in that rectangle reaches the file underneath.
+     */
+    public boolean onOverlayTouchEvent(MotionEvent event) {
+        if (presentation == null || !presentation.overlay) {
+            return false;
+        }
+        float x = event.getX();
+        float y = event.getY();
+        if (!overlayBounds.contains(x, y)) {
+            return false;
+        }
+
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                pressedButton = safeButton.contains(x, y) ? 1 : openButton.contains(x, y) ? 2 : 0;
+                listener.onNeedsRedraw();
+                return true;
+            case MotionEvent.ACTION_UP:
+                int released = pressedButton;
+                pressedButton = 0;
+                listener.onNeedsRedraw();
+                if (released == 1 && safeButton.contains(x, y)) {
+                    listener.onKeepSafe(file);
+                } else if (released == 2 && openButton.contains(x, y)) {
+                    listener.onOpenAnyway(file);
+                }
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                pressedButton = 0;
+                listener.onNeedsRedraw();
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * The scanning progress bar, under the status line.
+     *
+     * <h3>Why indeterminate, and why it moves</h3>
+     *
+     * A scan has no honest percentage. Hashing is proportional to file size,
+     * the structural checks are not, and a network lookup either answers in
+     * 200 ms or times out — so a filling bar would be a lie that runs backwards
+     * on the interesting files.
+     *
+     * A moving indeterminate bar is still worth its space. Without it the only
+     * signal is a spinning 16 dp glyph, and the honest question a user asks of
+     * a file that will not open is "is this app broken?". This says: something
+     * is happening, wait. It is also the visual grammar the file row above it
+     * already uses for downloading, which is the right association — the file
+     * is not ready yet.
+     *
+     * The sweep is derived from the clock, not accumulated per frame, so a cell
+     * recycled mid-scan joins the animation where it should be rather than
+     * restarting it.
+     */
+    private void drawProgress(Canvas canvas, float y) {
+        int height = JacTheme.dp(context, PROGRESS_HEIGHT_DP);
+        float radius = height / 2f;
+
+        scratch.set(0, y, width, y + height);
+        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setColor(JacTheme.wash(JacTheme.textMuted(context), 20));
+        canvas.drawRoundRect(scratch, radius, radius, fillPaint);
+
+        // A segment a third of the width, sweeping left to right and back. The
+        // reversal matters: a segment that wraps around the end reads as a
+        // stutter at the seam, and a stutter reads as a hang.
+        float phase = (SystemClock.elapsedRealtime() % PROGRESS_PERIOD_MS) / (float) PROGRESS_PERIOD_MS;
+        float travel = phase < 0.5f ? phase * 2f : (1f - phase) * 2f;
+        float segment = width / 3f;
+        float start = travel * (width - segment);
+
+        int clipped = canvas.save();
+        canvas.clipRect(scratch);
+        scratch.set(start, y, start + segment, y + height);
+        fillPaint.setColor(presentation.colour);
+        canvas.drawRoundRect(scratch, radius, radius, fillPaint);
+        canvas.restoreToCount(clipped);
     }
 
     /**
@@ -392,14 +617,18 @@ public final class ScanVerdictBlock {
         return scratch.contains(event.getX(), event.getY());
     }
 
-    @SuppressWarnings("deprecation")
     private StaticLayout buildLayout(String text, TextPaint paint, int layoutWidth) {
+        return buildLayout(text, paint, layoutWidth, Layout.Alignment.ALIGN_NORMAL);
+    }
+
+    @SuppressWarnings("deprecation")
+    private StaticLayout buildLayout(String text, TextPaint paint, int layoutWidth, Layout.Alignment alignment) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return StaticLayout.Builder.obtain(text, 0, text.length(), paint, layoutWidth)
-                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                    .setAlignment(alignment)
                     .setIncludePad(false)
                     .build();
         }
-        return new StaticLayout(text, paint, layoutWidth, Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false);
+        return new StaticLayout(text, paint, layoutWidth, alignment, 1f, 0f, false);
     }
 }
