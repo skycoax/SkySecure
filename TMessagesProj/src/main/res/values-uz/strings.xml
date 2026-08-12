@@ -14,10 +14,10 @@
 -->
 <resources>
 
-    <string name="app_name">SkySecure</string>
-    <string name="jac_about_telegram_api">SkySecure — Telegram API asosida ishlab chiqilgan norasmiy xabar almashish ilovasi. U Telegram bilan bog\'liq emas va Telegram tomonidan tasdiqlanmagan.</string>
+    <string name="app_name">Humogram</string>
+    <string name="jac_about_telegram_api">Humogram — Telegram API asosida ishlab chiqilgan norasmiy xabar almashish ilovasi. U Telegram bilan bog\'liq emas va Telegram tomonidan tasdiqlanmagan.</string>
     <string name="jac_about_source">Ushbu ilova GPLv3 litsenziyasi asosidagi erkin dasturiy ta\'minot. Manba kodi: %1$s</string>
-    <string name="jac_about_title">SkySecure haqida</string>
+    <string name="jac_about_title">Humogram haqida</string>
     <string name="jac_about_version">Versiya %1$s (%2$s)</string>
     <string name="jac_about_scanner_heading">Tekshiruv nima qiladi</string>
     <string name="jac_about_scanner_body">Sizga kelgan har bir fayl ochilishidan yoki ulashilishidan oldin tekshiriladi, har bir havola esa ochilishidan oldin. Serverimiz kerak bo\'lgan tekshiruvlarda faqat faylning raqamli izi yoki manzilning o\'zi yuboriladi — fayl nomlari, xabar matni yoki kim yuborgani hech qachon yuborilmaydi.\n\nMaxfiy chatlarda tekshiruv faqat qurilmangizda bajariladi. Hech qayerga hech narsa yuborilmaydi.</string>
@@ -40,7 +40,7 @@
     <string name="jac_scan_overridden">Siz bu xavfli faylni ochishni tanladingiz</string>
 
     <string name="jac_scan_suspicious_masquerade">Fayl nomi turini yashiradi</string>
-    <string name="jac_scan_suspicious_installer">Bu faylda virus bor</string>
+    <string name="jac_scan_suspicious_installer">Bu fayl ilova o‘rnatadi</string>
     <string name="jac_scan_suspicious_impersonation">Bu ilova boshqasiga o\'xshab olgan</string>
 
     <string name="jac_chip_dangerous">Xavfli fayl — bloklandi</string>
@@ -56,7 +56,7 @@
     <string name="jac_early_warning_cancel">Yuklab olinmasin</string>
 
     <string name="jac_quarantine_title">Bu fayl xavfli</string>
-    <string name="jac_quarantine_body">%1$s\n\nFayl SkySecure ichida saqlanmoqda. Shu yerda turar ekan, u galereyangizga yoki boshqa ilovalarga o\'ta olmaydi.</string>
+    <string name="jac_quarantine_body">%1$s\n\nFayl Humogram ichida saqlanmoqda. Shu yerda turar ekan, u galereyangizga yoki boshqa ilovalarga o\'ta olmaydi.</string>
     <string name="jac_quarantine_keep_safe">Xavfsiz qolsin</string>
     <string name="jac_quarantine_open_anyway">Baribir ochish…</string>
     <string name="jac_quarantine_delete">Faylni o\'chirish</string>
@@ -70,7 +70,7 @@
     <string name="jac_quarantine_confirm_cancel">Bekor qilish</string>
 
     <string name="jac_deepscan_title">Fayl chuqur tekshiruvga yuborilsinmi?</string>
-    <string name="jac_deepscan_body">Bu faylni chuqurroq tekshirish uchun <b>uning nusxasi telefoningizdan SkySecure tekshiruv xizmatiga yuboriladi</b>.\n\nFayl o\'sha yerda tahlil qilinadi va 24 soat ichida o\'chiriladi. U hech kimga berilmaydi va hech qanday ommaviy antivirus xizmatiga joylanmaydi.\n\nTelefoningizdan chiqishini istamagan shaxsiy ma\'lumotli fayllarni yubormang.</string>
+    <string name="jac_deepscan_body">Bu faylni chuqurroq tekshirish uchun <b>uning nusxasi telefoningizdan Humogram tekshiruv xizmatiga yuboriladi</b>.\n\nFayl o\'sha yerda tahlil qilinadi va 24 soat ichida o\'chiriladi. U hech kimga berilmaydi va hech qanday ommaviy antivirus xizmatiga joylanmaydi.\n\nTelefoningizdan chiqishini istamagan shaxsiy ma\'lumotli fayllarni yubormang.</string>
     <string name="jac_deepscan_file_info">Fayl: %1$s · %2$s</string>
     <string name="jac_deepscan_accept">Yuborish va tekshirish</string>
     <string name="jac_deepscan_decline">Yuborilmasin</string>

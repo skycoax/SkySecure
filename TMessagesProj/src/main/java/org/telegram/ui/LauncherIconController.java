@@ -34,12 +34,16 @@ public class LauncherIconController {
     }
 
     public enum LauncherIcon {
-        DEFAULT("DefaultIcon", R.drawable.icon_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconDefault),
-        VINTAGE("VintageIcon", R.drawable.icon_6_background_sa, R.mipmap.icon_6_foreground_sa, R.string.AppIconVintage),
-        AQUA("AquaIcon", R.drawable.icon_4_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconAqua),
-        PREMIUM("PremiumIcon", R.drawable.icon_3_background_sa, R.mipmap.icon_3_foreground_sa, R.string.AppIconPremium, true),
-        TURBO("TurboIcon", R.drawable.icon_5_background_sa, R.mipmap.icon_5_foreground_sa, R.string.AppIconTurbo, true),
-        NOX("NoxIcon", R.mipmap.icon_2_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconNox, true);
+        // Humogram: one icon, ours.
+        //
+        // The other five were Telegram's plane in six liveries, offered in the
+        // settings picker as identities this app could take on. Shipping a
+        // third-party app that can dress itself as Telegram is Play's
+        // Impersonation policy squarely, and the activity-alias entries that
+        // backed them are gone from the manifest -- leaving the enum entries
+        // would crash setIcon(), which calls setComponentEnabledSetting on
+        // every value.
+        DEFAULT("DefaultIcon", R.drawable.icon_background_sa, R.mipmap.icon_foreground_sa, R.string.AppIconDefault);
 
         public final String key;
         public final int background;

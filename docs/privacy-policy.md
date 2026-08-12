@@ -1,4 +1,4 @@
-# SkySecure — Maxfiylik siyosati / Политика конфиденциальности / Privacy Policy
+# Humogram — Maxfiylik siyosati / Политика конфиденциальности / Privacy Policy
 
 **Oxirgi yangilanish / Последнее обновление / Last updated: 2026-08-07**
 
@@ -31,7 +31,7 @@
 
 ### Qisqacha
 
-SkySecure sizga kelgan fayllarni va havolalarni tekshiradi. Tekshiruv uchun
+Humogram sizga kelgan fayllarni va havolalarni tekshiradi. Tekshiruv uchun
 serverimizga **faylning raqamli izi** yoki **havolaning o'zi** yuboriladi.
 
 **Hech qachon yuborilmaydi:** fayl nomlari, xabar matni, kim yuborgani, telefon
@@ -89,7 +89,7 @@ ommaviy antivirus xizmatiga joylanmaydi.
 ### Buni qanday tekshirish mumkin
 
 Ilova ochiq kodli (GPLv3). Kodni ko'rib, bu yerda yozilganlar rostmi yoki
-yo'qligini o'zingiz tekshirishingiz mumkin: https://github.com/skycoax/SkySecure
+yo'qligini o'zingiz tekshirishingiz mumkin: https://github.com/skycoax/Humogram
 
 ### Aloqa
 
@@ -103,7 +103,7 @@ kamolov1575@gmail.com · Kamolov Muxammad
 
 ### Коротко
 
-SkySecure проверяет файлы и ссылки, которые вам присылают. Для проверки на наш
+Humogram проверяет файлы и ссылки, которые вам присылают. Для проверки на наш
 сервер уходит **цифровой отпечаток файла** или **сама ссылка**.
 
 **Никогда не уходит:** имена файлов, текст сообщений, кто отправитель, ваш номер
@@ -160,7 +160,7 @@ SkySecure проверяет файлы и ссылки, которые вам �
 ### Как это проверить
 
 Приложение с открытым исходным кодом (GPLv3). Вы можете посмотреть код и
-убедиться, что написанное здесь — правда: https://github.com/skycoax/SkySecure
+убедиться, что написанное здесь — правда: https://github.com/skycoax/Humogram
 
 ### Связь
 
@@ -174,7 +174,7 @@ kamolov1575@gmail.com · Kamolov Muxammad
 
 ### In short
 
-SkySecure checks the files and links people send you. To do that, a **digital
+Humogram checks the files and links people send you. To do that, a **digital
 fingerprint of the file** or **the link itself** is sent to our server.
 
 **Never sent:** file names, message text, who sent it, your phone number, your
@@ -231,7 +231,7 @@ is never published to any public antivirus service.
 ### How to check this
 
 The app is open source (GPLv3). You can read the code and verify that what is
-written here is true: https://github.com/skycoax/SkySecure
+written here is true: https://github.com/skycoax/Humogram
 
 ### Contact
 

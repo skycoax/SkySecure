@@ -1399,7 +1399,20 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         final File destination = new File(jacScanPath);
         final File held = new File(state.filePath != null ? state.filePath : jacScanPath);
         final boolean quarantined = state.quarantined;
-        uz.jac.secure.android.QuarantineDialogs.showVirusWarning(activity, held, confirmed -> {
+        // MALICIOUS earns the "this is a virus" wording. Anything else that
+        // merely renders red -- a plain APK with broad permissions, say --
+        // gets the words its own verdict uses, because asserting infection
+        // without evidence is a false claim, not a strong warning.
+        String jacTitle = null, jacBody = null;
+        if (state.verdict != uz.jac.secure.core.model.Verdict.MALICIOUS) {
+            uz.jac.secure.android.ScanUi.Presentation p =
+                    uz.jac.secure.android.ScanUi.present(getContext(), state);
+            if (p != null) {
+                jacTitle = p.title;
+                jacBody = p.body;
+            }
+        }
+        uz.jac.secure.android.QuarantineDialogs.showVirusWarning(activity, held, jacTitle, jacBody, confirmed -> {
             uz.jac.secure.android.ScanGate gate = uz.jac.secure.android.ScanGate.getInstance(account);
             if (quarantined) {
                 gate.releaseAfterOverride(confirmed, destination, true, true);

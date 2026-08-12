@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="AppName">Telegram</string>
-    <string name="AppNameBeta">Telegram Beta</string>
+    <string name="AppName">Humogram</string>
+    <string name="AppNameBeta">Humogram Beta</string>
     <string name="LanguageName">English</string>
     <string name="English">English</string>
     <string name="LanguageNameInEnglish">English</string>
@@ -4178,7 +4178,7 @@
     <string name="ViewMessageStatistic">Message Statistic</string>
     <string name="ViewMessage">Open Message</string>
     <!--Intro view-->
-    <string name="Page1Title">Telegram</string>
+    <string name="Page1Title">Humogram</string>
     <string name="Page2Title">Fast</string>
     <string name="Page3Title">Free</string>
     <string name="Page4Title">Secure</string>
@@ -11168,15 +11168,15 @@
     <string name="ArticleAIGenerate">Generate</string>
     <string name="ArticleAIAddToPage">Add to Page</string>
 
-    <!-- SkySecure scanner -->
+    <!-- Humogram scanner -->
 
-    <string name="app_name">SkySecure</string>
+    <string name="app_name">Humogram</string>
 
-    <string name="jac_about_telegram_api">SkySecure is an unofficial messaging app built on the Telegram API. It is not affiliated with, endorsed by, or operated by Telegram.</string>
+    <string name="jac_about_telegram_api">Humogram is an unofficial messaging app built on the Telegram API. It is not affiliated with, endorsed by, or operated by Telegram.</string>
 
     <string name="jac_about_source">This app is free software under the GPLv3. Full source code: %1$s</string>
 
-    <string name="jac_about_title">About SkySecure</string>
+    <string name="jac_about_title">About Humogram</string>
 
     <string name="jac_about_version">Version %1$s (%2$s)</string>
 
@@ -11226,7 +11226,7 @@
 
     <string name="jac_scan_suspicious_masquerade">This file name hides its type</string>
 
-    <string name="jac_scan_suspicious_installer">This file has a virus</string>
+    <string name="jac_scan_suspicious_installer">This file installs an app</string>
 
     <string name="jac_scan_suspicious_impersonation">This app imitates another one</string>
 
@@ -11255,7 +11255,7 @@
 
     <string name="jac_quarantine_title">This file is dangerous</string>
 
-    <string name="jac_quarantine_body">%1$s\n\nThis file is being kept inside SkySecure. It cannot reach your gallery or other apps while it stays here.</string>
+    <string name="jac_quarantine_body">%1$s\n\nThis file is being kept inside Humogram. It cannot reach your gallery or other apps while it stays here.</string>
 
     <string name="jac_quarantine_keep_safe">Keep me safe</string>
 
@@ -11280,7 +11280,7 @@
 
     <string name="jac_deepscan_title">Send this file for a deeper check?</string>
 
-    <string name="jac_deepscan_body">To check this file more thoroughly, <b>a copy of it will be sent from your phone to the SkySecure scanning service</b>.\n\nThe file will be analysed there and deleted within 24 hours. It will not be shared with anyone else and will not be published to any public antivirus service.\n\nDo not send files that contain private information you would not want to leave your phone.</string>
+    <string name="jac_deepscan_body">To check this file more thoroughly, <b>a copy of it will be sent from your phone to the Humogram scanning service</b>.\n\nThe file will be analysed there and deleted within 24 hours. It will not be shared with anyone else and will not be published to any public antivirus service.\n\nDo not send files that contain private information you would not want to leave your phone.</string>
 
     <string name="jac_deepscan_file_info">File: %1$s · %2$s</string>
 

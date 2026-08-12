@@ -741,6 +741,19 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(SettingCell.Factory.of(18, IconBackgroundColors.BLUE_LIGHT.top, IconBackgroundColors.BLUE_LIGHT.bottom, R.drawable.settings_faq, getString(R.string.TelegramFAQ)));
         items.add(SettingCell.Factory.of(23, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_features, getString(R.string.TelegramFeatures)));
         items.add(SettingCell.Factory.of(19, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_policy, getString(R.string.PrivacyPolicy)));
+        // Humogram: the only way into the About screen.
+        //
+        // That screen carries the three things this app is obliged to show and
+        // could not: that it is unofficial and not operated by Telegram, the
+        // GPLv3 source offer inherited from Telegram-Android, and our own
+        // privacy policy. The Activity was declared in the manifest and never
+        // started from anywhere, so all three shipped as dead code -- an
+        // undisclosed data collection and an unmet licence obligation at once.
+        //
+        // Deliberately NOT inside the scanner's own settings block: those rows
+        // are hidden when the scanner fails to install, and the disclosure has
+        // to be there whether the scanner runs or not.
+        items.add(SettingCell.Factory.of(24, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_faq, uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_about_title)));
 
         if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
             items.add(UItem.asShadow(null));
@@ -877,6 +890,15 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     AccountFrozenAlert.show(currentAccount);
                 } else {
                     Browser.openUrl(getContext(), LocaleController.getString(R.string.TelegramFeaturesUrl));
+                }
+                break;
+            }
+            case 24: {
+                // startActivity, not presentFragment: AboutActivity is a plain
+                // android.app.Activity, not a BaseFragment.
+                if (getParentActivity() != null) {
+                    getParentActivity().startActivity(
+                            new android.content.Intent(getParentActivity(), uz.jac.secure.android.AboutActivity.class));
                 }
                 break;
             }

@@ -143,13 +143,16 @@ public final class ScanGate {
             String streamingSha256,
             Continuation continuation
     ) {
-        // Unconditional: the first question when the scanner appears to do
-        // nothing is whether this method was reached at all. Note that a file
-        // sent FROM this device never appears here — it does not pass through
-        // FileLoader — and is scanned by onOutgoingFile instead.
-        android.util.Log.d("jac", "onFileLoaded name=" + fileName
-                + " exists=" + (finalFile != null && finalFile.exists())
-                + " streamingSha=" + (streamingSha256 != null));
+        // Debug builds only. This was unconditional, and it wrote the name of
+        // every file the user received into logcat -- readable by anything
+        // holding READ_LOGS, and a disclosure the privacy policy does not make.
+        // The diagnostic is still worth having while developing; it is not
+        // worth shipping.
+        if (org.telegram.messenger.BuildVars.LOGS_ENABLED) {
+            android.util.Log.d("jac", "onFileLoaded name=" + fileName
+                    + " exists=" + (finalFile != null && finalFile.exists())
+                    + " streamingSha=" + (streamingSha256 != null));
+        }
 
         if (finalFile == null || !finalFile.exists()) {
             continuation.onScanned(finalFile);
@@ -326,7 +329,9 @@ public final class ScanGate {
             } catch (Throwable t) {
                 // A failed preview is not worth reporting: the real scan is
                 // already on its way and will publish the authoritative answer.
-                android.util.Log.d("jac", "name preview failed for " + fileName + ": " + t);
+                if (org.telegram.messenger.BuildVars.LOGS_ENABLED) {
+                    android.util.Log.d("jac", "name preview failed for " + fileName + ": " + t);
+                }
             }
         });
     }

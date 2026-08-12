@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Humogram. No <monochrome>: the themed-icon layer used to point at
+  @drawable/icon_plane, which is Telegram's plane and would have left a plane
+  on the home screen of anyone using themed icons. A bird silhouette would need
+  a hand-authored vector; until there is one, dropping the layer makes the
+  launcher fall back to this icon as drawn, which is correct if not themed.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/icon_background" />
     <foreground android:drawable="@mipmap/icon_foreground" />
-    <monochrome android:drawable="@drawable/icon_plane" />
 </adaptive-icon>

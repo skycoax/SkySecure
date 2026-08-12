@@ -120,11 +120,20 @@ public final class QuarantineDialogs {
      * filled, full-width, primary button. "Install anyway" is grey text — legal
      * to press, and it looks like what it is.
      */
-    public static void showVirusWarning(Activity activity, File file, ReleaseListener listener) {
+    public static void showVirusWarning(Activity activity, File file, String title, String body,
+                                        ReleaseListener listener) {
         Builder builder = new Builder(activity);
         builder.setGlyph(JacIcons.Glyph.VIRUS, JacTheme.danger(activity));
-        builder.setTitle(JacStrings.get(activity, R.string.jac_virus_title));
-        builder.setBody(JacStrings.get(activity, R.string.jac_virus_body));
+        // The words come from the verdict, not from this screen.
+        //
+        // It used to say "This is a virus" unconditionally. That dialog is
+        // reached from any red verdict, and a SUSPICIOUS one covers an ordinary
+        // sideloaded APK with broad permissions -- so the app was asserting
+        // infection about files it had no evidence against. Under Play's
+        // Misrepresentation policy that is a false claim about a third party's
+        // software, and it is also just untrue.
+        builder.setTitle(title != null ? title : JacStrings.get(activity, R.string.jac_virus_title));
+        builder.setBody(body != null ? body : JacStrings.get(activity, R.string.jac_virus_body));
 
         Dialog dialog = builder.create();
         TextView close = builder.addPrimaryAction(

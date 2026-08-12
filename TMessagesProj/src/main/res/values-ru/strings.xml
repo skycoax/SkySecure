@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="AppName">Telegram</string>
-    <string name="AppNameBeta">Telegram Beta</string>
+    <string name="AppName">Humogram</string>
+    <string name="AppNameBeta">Humogram Beta</string>
     <string name="LanguageName">Русский</string>
     <string name="English">Английский</string>
     <string name="LanguageNameInEnglish">Russian</string>
@@ -209,7 +209,7 @@
     <string name="CheckYourNewEmailSubtitle">Введите код, который пришёл на указанный Вами адрес %1$s.</string>
     <string name="LoginOrSingInWithGoogle">или</string>
     <!--Intro view-->
-    <string name="Page1Title">Telegram</string>
+    <string name="Page1Title">Humogram</string>
     <string name="Page2Title">Быстрый</string>
     <string name="Page3Title">Бесплатный</string>
     <string name="Page4Title">Безопасный</string>
@@ -264,16 +264,16 @@
     <string name="RemindDayAt">\'Отправить\' d MMM \'в\' HH:mm</string>
     <string name="RemindDayYearAt">\'Напомнить\' d MMM yyyy \'в\' HH:mm</string>
 
-    <!-- SkySecure scanner -->
+    <!-- Humogram scanner -->
 
 
-    <string name="app_name">SkySecure</string>
+    <string name="app_name">Humogram</string>
 
-    <string name="jac_about_telegram_api">SkySecure — неофициальное приложение для обмена сообщениями, использующее Telegram API. Оно не связано с Telegram и не одобрено Telegram.</string>
+    <string name="jac_about_telegram_api">Humogram — неофициальное приложение для обмена сообщениями, использующее Telegram API. Оно не связано с Telegram и не одобрено Telegram.</string>
 
     <string name="jac_about_source">Это свободное программное обеспечение под лицензией GPLv3. Исходный код: %1$s</string>
 
-    <string name="jac_about_title">О приложении SkySecure</string>
+    <string name="jac_about_title">О приложении Humogram</string>
 
     <string name="jac_about_version">Версия %1$s (%2$s)</string>
 
@@ -316,7 +316,7 @@
 
     <string name="jac_scan_suspicious_masquerade">Имя файла скрывает его тип</string>
 
-    <string name="jac_scan_suspicious_installer">В этом файле вирус</string>
+    <string name="jac_scan_suspicious_installer">Этот файл устанавливает приложение</string>
 
     <string name="jac_scan_suspicious_impersonation">Приложение выдаёт себя за другое</string>
 
@@ -345,7 +345,7 @@
 
     <string name="jac_quarantine_title">Этот файл опасен</string>
 
-    <string name="jac_quarantine_body">%1$s\n\nФайл остаётся внутри SkySecure. Пока он здесь, он не попадёт в галерею и не будет доступен другим приложениям.</string>
+    <string name="jac_quarantine_body">%1$s\n\nФайл остаётся внутри Humogram. Пока он здесь, он не попадёт в галерею и не будет доступен другим приложениям.</string>
 
     <string name="jac_quarantine_keep_safe">Оставить в безопасности</string>
 
@@ -370,7 +370,7 @@
 
     <string name="jac_deepscan_title">Отправить файл на углублённую проверку?</string>
 
-    <string name="jac_deepscan_body">Чтобы проверить файл тщательнее, <b>его копия будет отправлена с вашего телефона в сервис проверки SkySecure</b>.\n\nТам файл будет проанализирован и удалён в течение 24 часов. Он не будет передан никому и не будет опубликован ни в одном общедоступном антивирусном сервисе.\n\nНе отправляйте файлы с личными данными, которые не должны покидать ваш телефон.</string>
+    <string name="jac_deepscan_body">Чтобы проверить файл тщательнее, <b>его копия будет отправлена с вашего телефона в сервис проверки Humogram</b>.\n\nТам файл будет проанализирован и удалён в течение 24 часов. Он не будет передан никому и не будет опубликован ни в одном общедоступном антивирусном сервисе.\n\nНе отправляйте файлы с личными данными, которые не должны покидать ваш телефон.</string>
 
     <string name="jac_deepscan_file_info">Файл: %1$s · %2$s</string>
 

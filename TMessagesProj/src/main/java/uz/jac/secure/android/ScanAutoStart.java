@@ -177,7 +177,9 @@ public final class ScanAutoStart {
             } catch (Throwable t) {
                 // Same rule as everywhere else in this layer: a scanner that
                 // cannot start is an app without a scanner, not a crash.
-                android.util.Log.d("jac", "auto-start failed for " + displayName + ": " + t);
+                if (org.telegram.messenger.BuildVars.LOGS_ENABLED) {
+                    android.util.Log.d("jac", "auto-start failed for " + displayName + ": " + t);
+                }
             }
         });
     }
