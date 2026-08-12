@@ -821,6 +821,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return false;
         }
 
+        /**
+         * SkySecure: the scan verdict in this cell's bubble changed, and the
+         * bubble is now a different height.
+         *
+         * The host must re-bind the cell AND tell its adapter the row resized —
+         * see {@code ChatMessageCell.jacOnScanStateChanged}. Defaulted to
+         * nothing so the many screens that host a cell outside a message list
+         * are unaffected.
+         */
+        default void didChangeScanVerdict(ChatMessageCell cell) {}
+
         default void didPressTopicButton(ChatMessageCell cell) {}
 
         default boolean shouldShowTopicButton(ChatMessageCell cell) {
@@ -1267,6 +1278,31 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private uz.jac.secure.android.ScanVerdictBlock jacScanBlock;
     private MessageObject jacScanBound;
     private int jacScanX, jacScanY;
+    /**
+     * Path of the file this cell is currently showing a verdict for.
+     *
+     * The key the store publishes under, so it is also what tells a notification
+     * meant for this cell from one meant for some other message. Volatile
+     * because the store publishes from the scan executor, not the UI thread.
+     */
+    private volatile String jacScanPath;
+    /** The store this cell is subscribed to, or null while detached. */
+    private uz.jac.secure.android.ScanStateStore jacListenerStore;
+    /**
+     * Live verdict updates.
+     *
+     * The store has had a listener interface since the beginning and, until
+     * this, no subscribers at all — which is precisely why a verdict only ever
+     * appeared after leaving the chat and coming back. Nothing was wrong with
+     * the scan; the result simply had no way to reach a cell that had already
+     * been laid out, and re-entering the chat rebuilt every cell from scratch.
+     */
+    private final uz.jac.secure.android.ScanStateStore.Listener jacStoreListener = (path, state) -> {
+        if (path == null || !path.equals(jacScanPath)) {
+            return;
+        }
+        AndroidUtilities.runOnUIThread(this::jacOnScanStateChanged);
+    };
     private final uz.jac.secure.android.ScanVerdictBlock.Listener jacScanListener = new uz.jac.secure.android.ScanVerdictBlock.Listener() {
         @Override
         public void onKeepSafe(File file) {
@@ -1305,6 +1341,40 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             invalidate();
         }
     };
+
+    /**
+     * A verdict for the file in this bubble has arrived or changed.
+     *
+     * {@code invalidate()} is not enough and that is the whole subtlety here.
+     * The verdict is laid out INSIDE the bubble, so its arrival changes the
+     * bubble's height — a block that was absent appears, and a quarantined file
+     * grows two buttons on top of that. Height is computed once, in
+     * {@code setMessageContent}, and cached in {@code totalHeight}; redrawing
+     * without recomputing it would paint the new verdict into the old geometry,
+     * clipped or overlapping the timestamp.
+     *
+     * So the message has to be re-bound, and the list has to be told the row
+     * resized. That second half is why this goes through the delegate rather
+     * than calling {@code requestLayout()} and hoping: RecyclerView caches item
+     * heights, and Telegram's own height-changing paths (channel
+     * recommendations, transcription) all pair the reset with an adapter
+     * notification.
+     */
+    private void jacOnScanStateChanged() {
+        if (currentMessageObject == null || !attachedToWindow) {
+            return;
+        }
+        if (delegate != null) {
+            delegate.didChangeScanVerdict(this);
+            return;
+        }
+        // No host list — a preview or settings screen showing a sample bubble.
+        // Re-bind in place; there is no adapter to notify.
+        currentMessageObject.forceUpdate = true;
+        forceResetMessageObject();
+        requestLayout();
+        invalidate();
+    }
     // ---- end SkySecure ---------------------------------------------------
 
     private AvatarsDrawable groupCallParticipantsAvatars;
@@ -6409,6 +6479,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didUpdatePremiumGiftStickers);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.userInfoDidLoad);
+        // SkySecure: the store holds listeners strongly, so an unsubscribed cell
+        // is a leaked cell — and cells are recycled by the hundred.
+        if (jacListenerStore != null) {
+            jacListenerStore.removeListener(jacStoreListener);
+            jacListenerStore = null;
+        }
 
         cancelShakeAnimation();
         if (checkBox != null) {
@@ -6516,6 +6592,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didUpdatePremiumGiftStickers);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.userInfoDidLoad);
+        // SkySecure: subscribe while on screen, so a verdict that lands mid-view
+        // reaches this cell instead of waiting for the chat to be reopened.
+        // The store is remembered rather than looked up again on detach: the
+        // store is per-account, and unsubscribing from a different one than we
+        // subscribed to would leave this cell referenced forever.
+        if (uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
+            jacListenerStore = uz.jac.secure.android.ScanGate.getInstance(currentAccount).getStateStore();
+            jacListenerStore.addListener(jacStoreListener);
+        }
 
         if (currentMessageObject != null) {
             currentMessageObject.animateComments = false;
@@ -10651,22 +10736,54 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 // SkySecure: the verdict lives inside this bubble, so its
                 // height has to be part of the bubble's.
                 jacScanBound = null;
-                if (currentMessageObject.type == MessageObject.TYPE_FILE && currentPosition == null
+                jacScanPath = null;
+                // Grouped documents are included; a media album is not.
+                //
+                // The two groupings look alike and are laid out by completely
+                // different rules. A photo/video album has its heights dictated
+                // by the grid solver in GroupedMessages.calculate(), so a cell
+                // that grew by the height of a verdict would no longer match the
+                // geometry its siblings were measured against. A DOCUMENT group
+                // gets no such treatment: calculate() gives it edge flags and
+                // nothing else, and every cell measures its own totalHeight —
+                // exactly as a standalone message does.
+                //
+                // Excluding both was a real hole rather than a cosmetic one.
+                // Sending several APKs at once is one tap in the attachment
+                // sheet, and the whole block — the scan as well as the verdict —
+                // was skipped for every one of them. The file was still checked
+                // if the user tapped it (FileLoader always goes through
+                // ScanGate) and still quarantined, so what they got was a file
+                // that silently refused to open with no warning anywhere.
+                final boolean jacGroupAllowsVerdict = currentPosition == null
+                        || currentMessagesGroup != null && currentMessagesGroup.isDocuments;
+                if (currentMessageObject.type == MessageObject.TYPE_FILE && jacGroupAllowsVerdict
                         && documentAttachType == DOCUMENT_ATTACH_TYPE_DOCUMENT
                         && uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
                     uz.jac.secure.android.ScanStateStore jacStore =
                             uz.jac.secure.android.ScanGate.getInstance(currentAccount).getStateStore();
-                    File jacFile = null;
-                    uz.jac.secure.android.ScanStateStore.State jacState = null;
-                    // isEmpty() first: nothing has been scanned in the common
-                    // case, and resolving a message to a path is the costly half.
-                    if (!jacStore.isEmpty()) {
-                        // false = do NOT go through the file-database queue. The
-                        // blocking overload runs a database lookup inside the
-                        // layout pass, for every document, while scrolling.
-                        jacFile = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner, false);
-                        jacState = jacFile == null ? null : jacStore.get(jacFile.getAbsolutePath());
-                    }
+                    // false = do NOT go through the file-database queue. The
+                    // blocking overload runs a database lookup inside the
+                    // layout pass, for every document, while scrolling.
+                    //
+                    // Resolved unconditionally, where this used to be skipped
+                    // whenever the store was empty. That shortcut was correct
+                    // only while a scan could not begin until the user started a
+                    // download: the store being empty really did mean there was
+                    // nothing to show. Now the path is what decides whether the
+                    // file is already on disk or has to be fetched, and it is
+                    // the key the store publishes under — a cell that never
+                    // learned its path could not be told its verdict had
+                    // arrived, which is the whole reason a verdict used to
+                    // appear only after leaving the chat and returning.
+                    File jacFile = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner, false);
+                    jacScanPath = jacFile == null ? null : jacFile.getAbsolutePath();
+                    uz.jac.secure.android.ScanStateStore.State jacState =
+                            jacScanPath == null ? null : jacStore.get(jacScanPath);
+                    // Kick the scan for a document the user can now see. Cheap
+                    // and idempotent on repeat calls, and it posts its own work
+                    // off this layout pass.
+                    uz.jac.secure.android.ScanAutoStart.ensure(currentAccount, currentMessageObject, jacFile);
                     if (jacScanBlock == null && jacState != null) {
                         jacScanBlock = new uz.jac.secure.android.ScanVerdictBlock(getContext(), jacScanListener);
                     }
@@ -10680,7 +10797,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         // verdict is the last element and the time would be drawn
                         // on top of it. dp(18) is what upstream reserves for a
                         // fact check in exactly that situation.
-                        if (captionLayout == null && !hasFactCheck) {
+                        //
+                        // Only where a time is actually drawn. Inside a document
+                        // group that is the bottom cell alone — the others are
+                        // mid-bubble and have nothing to clear, so reserving the
+                        // room there would just open a gap under each file.
+                        final boolean jacDrawsTime = currentPosition == null
+                                || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0;
+                        if (captionLayout == null && !hasFactCheck && jacDrawsTime) {
                             totalHeight += dp(18);
                         }
                     }
