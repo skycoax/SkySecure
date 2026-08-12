@@ -91,6 +91,58 @@ public final class QuarantineDialogs {
     }
 
     /**
+     * What the user gets instead of the file opening.
+     *
+     * <h3>Why this is not step one of the pair above</h3>
+     *
+     * Those two stand between the user and a file they have already decided to
+     * open — they were reached by pressing "Open anyway" on the verdict block,
+     * which is itself a deliberate act. This one interrupts an ordinary tap on
+     * an ordinary-looking file row. The person on the other side of it is not
+     * making a decision yet; they are opening an attachment, which is a reflex.
+     *
+     * So it says one thing, in the plainest words available: this is a virus,
+     * and here is what it does to you. Not which malware family, not what the
+     * scanner matched on — none of that changes the decision, and every clause
+     * of it is a clause the user skims.
+     *
+     * <h3>The three seconds</h3>
+     *
+     * Both buttons are inert while the countdown runs. The point is not to make
+     * the user wait; it is that a tap already in flight — the second half of the
+     * double-tap that opened this dialog — must not land on a button. Three
+     * seconds is long enough to break the motion and short enough not to be
+     * read as the app hanging, which is why the counter is visible: a dead
+     * button with no explanation is a bug, a dead button counting down is a
+     * rule.
+     *
+     * <p>Afterwards the two actions are deliberately unequal. "Close" is the
+     * filled, full-width, primary button. "Install anyway" is grey text — legal
+     * to press, and it looks like what it is.
+     */
+    public static void showVirusWarning(Activity activity, File file, ReleaseListener listener) {
+        Builder builder = new Builder(activity);
+        builder.setGlyph(JacIcons.Glyph.VIRUS, JacTheme.danger(activity));
+        builder.setTitle(JacStrings.get(activity, R.string.jac_virus_title));
+        builder.setBody(JacStrings.get(activity, R.string.jac_virus_body));
+
+        Dialog dialog = builder.create();
+        TextView close = builder.addPrimaryAction(
+                JacStrings.get(activity, R.string.jac_virus_close), v -> dialog.dismiss());
+        TextView proceed = builder.addMutedAction(
+                JacStrings.get(activity, R.string.jac_virus_install_anyway), v -> {
+                    dialog.dismiss();
+                    // Straight into step 2 of the pair below rather than
+                    // releasing here. This dialog delays a reflex; that one
+                    // takes a decision, and the file does not move without it.
+                    showConfirm(activity, file, listener);
+                });
+
+        builder.startCountdown(dialog, close, proceed);
+        dialog.show();
+    }
+
+    /**
      * Step 2 of 2 — what happens to you.
      *
      * Not public. There is no way to reach this screen except through step one,
@@ -150,10 +202,18 @@ public final class QuarantineDialogs {
 
         private static final int TOTAL_STEPS = 2;
 
+        /** Seconds both buttons stay inert on the virus warning. */
+        private static final int COUNTDOWN_SECONDS = 3;
+
         private final Activity activity;
         private final LinearLayout card;
         private final LinearLayout actions;
         private Dialog dialog;
+
+        /** The virus warning: one screen, so no "step N of M" overline. */
+        Builder(Activity activity) {
+            this(activity, 0);
+        }
 
         Builder(Activity activity, int step) {
             this.activity = activity;
@@ -168,13 +228,15 @@ public final class QuarantineDialogs {
             background.setCornerRadius(JacTheme.dp(activity, 16));
             card.setBackground(background);
 
-            TextView counter = new TextView(activity);
-            counter.setText(JacStrings.get(activity, R.string.jac_quarantine_step, step, TOTAL_STEPS));
-            counter.setTextSize(11f);
-            counter.setAllCaps(true);
-            counter.setLetterSpacing(0.14f);
-            counter.setTextColor(JacTheme.textMuted(activity));
-            card.addView(counter);
+            if (step > 0) {
+                TextView counter = new TextView(activity);
+                counter.setText(JacStrings.get(activity, R.string.jac_quarantine_step, step, TOTAL_STEPS));
+                counter.setTextSize(11f);
+                counter.setAllCaps(true);
+                counter.setLetterSpacing(0.14f);
+                counter.setTextColor(JacTheme.textMuted(activity));
+                card.addView(counter);
+            }
 
             actions = new LinearLayout(activity);
             actions.setOrientation(LinearLayout.VERTICAL);
@@ -266,7 +328,7 @@ public final class QuarantineDialogs {
             return dialog;
         }
 
-        void addPrimaryAction(String text, View.OnClickListener listener) {
+        TextView addPrimaryAction(String text, View.OnClickListener listener) {
             TextView button = button(text, JacTheme.onPrimary(activity));
             GradientDrawable background = new GradientDrawable();
             background.setColor(JacTheme.primary(activity));
@@ -274,6 +336,72 @@ public final class QuarantineDialogs {
             button.setBackground(background);
             button.setOnClickListener(listener);
             actions.addView(button, buttonParams(JacTheme.dp(activity, 22)));
+            return button;
+        }
+
+        /**
+         * The way out that is allowed but not offered.
+         *
+         * No fill, no outline, no red — red is a warning colour and putting it
+         * on the escape hatch makes the hatch the loudest thing on the screen.
+         * Muted grey text at a smaller size reads as what it is: a link for
+         * someone who has already decided, and nothing the eye lands on first.
+         */
+        TextView addMutedAction(String text, View.OnClickListener listener) {
+            TextView button = button(text, JacTheme.textMuted(activity));
+            button.setTextSize(15f);
+            button.setTypeface(android.graphics.Typeface.DEFAULT);
+            button.setBackground(null);
+            button.setOnClickListener(listener);
+            actions.addView(button, buttonParams(JacTheme.dp(activity, 4)));
+            return button;
+        }
+
+        /**
+         * Hold both buttons inert for {@link #COUNTDOWN_SECONDS}, counting down
+         * on the primary one.
+         *
+         * The counter goes on the SAFE button on purpose. It is the one the
+         * user should end up pressing, so it is the one that has to explain the
+         * wait; a countdown on "Install anyway" would advertise the escape
+         * hatch and turn the delay into a three-second trailer for it.
+         */
+        void startCountdown(Dialog dialog, TextView primary, TextView muted) {
+            final String label = primary.getText().toString();
+            final int[] remaining = {COUNTDOWN_SECONDS};
+
+            setActionsEnabled(primary, muted, false);
+            primary.setText(label + "  " + remaining[0]);
+
+            final Runnable[] tick = new Runnable[1];
+            tick[0] = () -> {
+                // The dialog can be gone: dismissed by the caller, or the
+                // activity torn down under it. Touching the views then is a
+                // leak at best, so the countdown checks before every step and
+                // simply stops.
+                if (!dialog.isShowing()) {
+                    return;
+                }
+                remaining[0]--;
+                if (remaining[0] > 0) {
+                    primary.setText(label + "  " + remaining[0]);
+                    primary.postDelayed(tick[0], 1000L);
+                } else {
+                    primary.setText(label);
+                    setActionsEnabled(primary, muted, true);
+                }
+            };
+            primary.postDelayed(tick[0], 1000L);
+        }
+
+        private void setActionsEnabled(TextView primary, TextView muted, boolean enabled) {
+            primary.setEnabled(enabled);
+            muted.setEnabled(enabled);
+            // Alpha rather than a colour swap: it dims the filled background
+            // and the label together, so a disabled primary button still looks
+            // like the same button rather than a different, greyer control.
+            primary.setAlpha(enabled ? 1f : 0.45f);
+            muted.setAlpha(enabled ? 1f : 0.25f);
         }
 
         TextView addDangerAction(String text, View.OnClickListener listener) {

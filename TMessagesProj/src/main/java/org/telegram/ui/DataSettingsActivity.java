@@ -78,6 +78,12 @@ public class DataSettingsActivity extends BaseFragment {
     @Keep
     private int resetDownloadRow = -1;
     private int mediaDownloadSection2Row;
+    // SkySecure: the scanner has to download a file before it can check it, so
+    // its policy belongs beside the auto-download presets, not on a screen of
+    // its own where nobody would connect the two.
+    private int jacScanSectionRow;
+    private int jacScanAutoCheckRow;
+    private int jacScanInfoRow;
     private int usageSectionRow;
     private int storageUsageRow;
     private int dataUsageRow;
@@ -167,6 +173,19 @@ public class DataSettingsActivity extends BaseFragment {
             }
         }
         mediaDownloadSection2Row = rowCount++;
+
+        // SkySecure. Hidden entirely when the scanner failed to start, rather
+        // than shown disabled: a control over a feature that is not running is
+        // a promise the app cannot keep.
+        if (uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
+            jacScanSectionRow = rowCount++;
+            jacScanAutoCheckRow = rowCount++;
+            jacScanInfoRow = rowCount++;
+        } else {
+            jacScanSectionRow = -1;
+            jacScanAutoCheckRow = -1;
+            jacScanInfoRow = -1;
+        }
 
         saveToGallerySectionRow = rowCount++;
         saveToGalleryPeerRow = rowCount++;
@@ -550,6 +569,30 @@ public class DataSettingsActivity extends BaseFragment {
                 showDialog(builder.create());
             } else if (position == proxyRow) {
                 presentFragment(new ProxyListActivity());
+            } else if (position == jacScanAutoCheckRow) {
+                if (getParentActivity() == null) {
+                    return;
+                }
+                final Context ctx = getParentActivity();
+                showDialog(AlertsCreator.createSingleChoiceDialog(
+                        getParentActivity(),
+                        new String[]{
+                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_never),
+                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_wifi),
+                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_always)
+                        },
+                        uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck),
+                        // The option order IS the constant order, so the index
+                        // the dialog reports is the value to store. Kept that
+                        // way deliberately: a lookup table here would be one
+                        // more thing to get out of step with ScanSettings.
+                        uz.jac.secure.android.ScanSettings.getAutoCheck(),
+                        (dialog, which) -> {
+                            uz.jac.secure.android.ScanSettings.setAutoCheck(which);
+                            if (listAdapter != null) {
+                                listAdapter.notifyItemChanged(jacScanAutoCheckRow);
+                            }
+                        }));
             } else if (position == enableStreamRow) {
                 SharedConfig.toggleStreamMedia();
                 TextCheckCell textCheckCell = (TextCheckCell) view;
@@ -726,6 +769,11 @@ public class DataSettingsActivity extends BaseFragment {
                     } else if (position == clearDraftsRow) {
                         textCell.setIcon(0);
                         textCell.setText(LocaleController.getString(R.string.PrivacyDeleteCloudDrafts), false);
+                    } else if (position == jacScanAutoCheckRow) {
+                        textCell.setIcon(0);
+                        textCell.setTextAndValue(
+                                uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_autocheck),
+                                jacAutoCheckValue(mContext), false);
                     }
                     break;
                 }
@@ -745,6 +793,8 @@ public class DataSettingsActivity extends BaseFragment {
                         headerCell.setText(LocaleController.getString(R.string.AutoplayMedia));
                     } else if (position == saveToGallerySectionRow) {
                         headerCell.setText(LocaleController.getString(R.string.SaveToGallerySettings));
+                    } else if (position == jacScanSectionRow) {
+                        headerCell.setText(uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_title));
                     }
                     break;
                 }
@@ -769,6 +819,8 @@ public class DataSettingsActivity extends BaseFragment {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == enableAllStreamInfoRow) {
                         cell.setText(LocaleController.getString(R.string.EnableAllStreamingInfo));
+                    } else if (position == jacScanInfoRow) {
+                        cell.setText(uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_autocheck_info));
                     }
                     break;
                 }
@@ -885,7 +937,8 @@ public class DataSettingsActivity extends BaseFragment {
         public boolean isRowEnabled(int position) {
             return position == mobileRow || position == roamingRow || position == wifiRow || position == storageUsageRow || position == useLessDataForCallsRow || position == dataUsageRow || position == proxyRow || position == clearDraftsRow ||
                     position == enableCacheStreamRow || position == enableStreamRow || position == enableAllStreamRow || position == enableMkvRow || position == quickRepliesRow || position == autoplayVideoRow || position == autoplayGifsRow ||
-                    position == storageNumRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow || position == resetDownloadRow;
+                    position == storageNumRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow || position == resetDownloadRow ||
+                    position == jacScanAutoCheckRow;
         }
 
         @Override
@@ -928,11 +981,11 @@ public class DataSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == mediaDownloadSection2Row || position == usageSection2Row || position == callsSection2Row || position == proxySection2Row || position == autoplaySectionRow || position == clearDraftsSectionRow || position == saveToGalleryDividerRow) {
                 return 0;
-            } else if (position == mediaDownloadSectionRow || position == streamSectionRow || position == callsSectionRow || position == usageSectionRow || position == proxySectionRow || position == autoplayHeaderRow || position == saveToGallerySectionRow) {
+            } else if (position == mediaDownloadSectionRow || position == streamSectionRow || position == callsSectionRow || position == usageSectionRow || position == proxySectionRow || position == autoplayHeaderRow || position == saveToGallerySectionRow || position == jacScanSectionRow) {
                 return 2;
             } else if (position == enableCacheStreamRow || position == enableStreamRow || position == enableAllStreamRow || position == enableMkvRow || position == autoplayGifsRow || position == autoplayVideoRow) {
                 return 3;
-            } else if (position == enableAllStreamInfoRow) {
+            } else if (position == enableAllStreamInfoRow || position == jacScanInfoRow) {
                 return 4;
             } else if (position == mobileRow || position == wifiRow || position == roamingRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow) {
                 return 5;
@@ -941,6 +994,19 @@ public class DataSettingsActivity extends BaseFragment {
             } else {
                 return 1;
             }
+        }
+    }
+
+    /** SkySecure: the current auto-check policy, in the user's language. */
+    private static String jacAutoCheckValue(Context context) {
+        switch (uz.jac.secure.android.ScanSettings.getAutoCheck()) {
+            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_NEVER:
+                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_never);
+            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_ALWAYS:
+                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_always);
+            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_WIFI:
+            default:
+                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_wifi);
         }
     }
 

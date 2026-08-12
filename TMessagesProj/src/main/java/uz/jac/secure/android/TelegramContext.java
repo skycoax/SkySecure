@@ -56,8 +56,12 @@ public final class TelegramContext {
      * Fails CLOSED: anything we cannot positively identify as a normal cloud
      * chat is treated as a secret chat, i.e. offline-only. Getting this
      * backwards would send a hash derived from self-destructing media to a
-     * server, which is precisely what ToS 1.4/1.5 forbids — so when in doubt we
-     * lose a little detection capability rather than leak.
+     * server. The API Terms say nothing about secret chats specifically; what
+     * they do say is 1.1, that a client must "guard their users' privacy with
+     * utmost care and comply with our Security Guidelines". Shipping a
+     * fingerprint of content the user believes never left their device fails
+     * that plainly. So when in doubt we lose a little detection capability
+     * rather than leak.
      */
     public static ScanMode scanModeFor(Object parentObject) {
         if (!(parentObject instanceof MessageObject)) {

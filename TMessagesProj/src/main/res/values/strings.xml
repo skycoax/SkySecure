@@ -11384,4 +11384,22 @@
 
     <string name="jac_settings_privacy_summary">Only the digital fingerprint of a file and the result. Never file names, messages, or who sent them.</string>
 
+    <string name="jac_virus_title">This file is a virus</string>
+
+    <string name="jac_virus_body">It does not matter which one — it is a virus. If you install it, it can read your personal data, take money from your accounts, and get into your other apps, including Telegram.</string>
+
+    <string name="jac_virus_close">Close</string>
+
+    <string name="jac_virus_install_anyway">Install anyway</string>
+
+    <string name="jac_settings_autocheck">Check files automatically</string>
+
+    <string name="jac_settings_autocheck_never">Never</string>
+
+    <string name="jac_settings_autocheck_wifi">On Wi-Fi only</string>
+
+    <string name="jac_settings_autocheck_always">Always</string>
+
+    <string name="jac_settings_autocheck_info">To check a file before you open it, it has to be downloaded first. File names are always checked, on any setting — that costs no data.</string>
+
 </resources>

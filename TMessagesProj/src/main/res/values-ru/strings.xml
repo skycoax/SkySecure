@@ -472,4 +472,22 @@
 
     <string name="jac_settings_privacy_summary">Только цифровой отпечаток файла и результат. Никогда — имена файлов, сообщения или отправителей.</string>
 
+    <string name="jac_virus_title">Это вирус</string>
+
+    <string name="jac_virus_body">Неважно какой — это вирус. Если вы его установите, он сможет получить ваши личные данные, списать деньги со счетов и получить доступ к другим приложениям, включая Telegram.</string>
+
+    <string name="jac_virus_close">Закрыть</string>
+
+    <string name="jac_virus_install_anyway">Всё равно установить</string>
+
+    <string name="jac_settings_autocheck">Проверять файлы автоматически</string>
+
+    <string name="jac_settings_autocheck_never">Никогда</string>
+
+    <string name="jac_settings_autocheck_wifi">Только по Wi-Fi</string>
+
+    <string name="jac_settings_autocheck_always">Всегда</string>
+
+    <string name="jac_settings_autocheck_info">Чтобы проверить файл до того, как вы его откроете, его нужно сначала загрузить. Имена файлов проверяются при любой настройке — это не расходует трафик.</string>
+
 </resources>

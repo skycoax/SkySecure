@@ -124,4 +124,22 @@
     <string name="jac_settings_privacy">Biz nimani yig\'amiz</string>
     <string name="jac_settings_privacy_summary">Faqat faylning raqamli izi va natija. Hech qachon fayl nomlari, xabarlar yoki kim yuborgani emas.</string>
 
+    <string name="jac_virus_title">Bu — virus</string>
+
+    <string name="jac_virus_body">Qaysi biri ekani muhim emas — bu virus. Uni o‘rnatsangiz, u shaxsiy ma’lumotlaringizni olishi, hisobingizdan pul yechib olishi va boshqa ilovalarga, jumladan Telegramga ham kirishi mumkin.</string>
+
+    <string name="jac_virus_close">Yopish</string>
+
+    <string name="jac_virus_install_anyway">Baribir o‘rnatish</string>
+
+    <string name="jac_settings_autocheck">Fayllarni avtomatik tekshirish</string>
+
+    <string name="jac_settings_autocheck_never">Hech qachon</string>
+
+    <string name="jac_settings_autocheck_wifi">Faqat Wi-Fi orqali</string>
+
+    <string name="jac_settings_autocheck_always">Doimo</string>
+
+    <string name="jac_settings_autocheck_info">Faylni ochishdan oldin tekshirish uchun uni avval yuklab olish kerak. Fayl nomlari har qanday sozlamada tekshiriladi — bu trafik sarflamaydi.</string>
+
 </resources>

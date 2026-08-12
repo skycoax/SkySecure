@@ -43,7 +43,13 @@ public final class JacTheme {
     private static final int NEUTRAL_DARK = 0xFF8A97A3;
     private static final int NEUTRAL_LIGHT = 0xFF6B7A87;
 
-    /** Brand accent, used only for the SAFE action. Never for a warning. */
+    /**
+     * Fallback accent for the SAFE action. Never for a warning.
+     *
+     * A fallback only — see {@link #primary}, which takes the accent from the
+     * user's Telegram theme and reaches these constants solely when that lookup
+     * fails.
+     */
     private static final int PRIMARY_DARK = 0xFF2BB5A6;
     private static final int PRIMARY_LIGHT = 0xFF12897C;
 
@@ -79,11 +85,54 @@ public final class JacTheme {
         return isDark(c) ? NEUTRAL_DARK : NEUTRAL_LIGHT;
     }
 
+    /**
+     * The accent for the safe, primary action — taken from Telegram, not
+     * invented here.
+     *
+     * <h3>Why this is not a brand colour</h3>
+     *
+     * It used to be a teal of our own, and it was wrong every time. The user
+     * has chosen a theme, and in Telegram that choice is an accent colour
+     * applied everywhere: their filled buttons, their links, their send button.
+     * A dialog that arrives in a different accent does not read as our product
+     * having an identity; it reads as a dialog from somewhere else — which, on
+     * a screen whose entire job is to be believed about a virus, is the exact
+     * impression that must not be given.
+     *
+     * <p>The danger colour deliberately does NOT do this. Red has to stay red
+     * regardless of the theme: a user on a red-accented theme would otherwise
+     * get warnings the same colour as their send button, and one on a green
+     * theme would get green ones. That is a security control, not a style
+     * choice — see the note at the top of this class.
+     *
+     * <p>{@code key_featuredStickers_addButton} is the filled-accent button
+     * colour, the same key upstream uses for "Add" and "Install". Falls back to
+     * the constants above if the theme has no such key, because a dialog with
+     * an odd-coloured button is survivable and a crash while warning someone
+     * about malware is not.
+     */
     public static int primary(Context c) {
+        try {
+            int themed = org.telegram.ui.ActionBar.Theme.getColor(
+                    org.telegram.ui.ActionBar.Theme.key_featuredStickers_addButton);
+            if (themed != 0) {
+                return themed;
+            }
+        } catch (Throwable ignored) {
+        }
         return isDark(c) ? PRIMARY_DARK : PRIMARY_LIGHT;
     }
 
+    /** The label colour that goes on {@link #primary}, from the same theme. */
     public static int onPrimary(Context c) {
+        try {
+            int themed = org.telegram.ui.ActionBar.Theme.getColor(
+                    org.telegram.ui.ActionBar.Theme.key_featuredStickers_buttonText);
+            if (themed != 0) {
+                return themed;
+            }
+        } catch (Throwable ignored) {
+        }
         return ON_PRIMARY;
     }
 

@@ -37,8 +37,11 @@ import uz.jac.secure.core.model.Verdict;
  *     no other component ever learns the original location or can export it.
  *
  *   * Secret chats take the offline path: {@link ScanMode#SECRET_CHAT} keeps
- *     every hash and URL on the device and writes nothing to the cache
- *     (ToS 1.4/1.5).
+ *     every hash and URL on the device and writes nothing to the cache. Not a
+ *     rule quoted from anywhere — the API Terms have no clause about secret
+ *     chats. It follows from 1.1 ("guard their users' privacy with utmost
+ *     care"), and from the plainer fact that a hash of a message the user
+ *     believes is end-to-end is still a fingerprint of that message.
  *
  * Scanning runs on a small bounded executor, never on the file-loader thread —
  * blocking that thread would stall every other download in the queue.
@@ -256,8 +259,22 @@ public final class ScanGate {
      *
      * <p>Whatever this concludes is provisional. {@link #onFileLoaded} clears the
      * mark and overwrites the state when the bytes land.
+     *
+     * @param scanWillFollow whether a download has actually been started, so
+     *        the bytes really are on their way.
+     *
+     *        <p>False when {@link ScanSettings} said no — mobile data, or a file
+     *        over the fetch cap. The spinner is then a lie with no expiry: it
+     *        says work is in progress when nothing is, and it never resolves,
+     *        because the thing that would resolve it is the download we just
+     *        decided not to start. A 65 MB file sat at "checking..." for as long
+     *        as the chat stayed open.
+     *
+     *        <p>So on false this publishes nothing unless the name itself is
+     *        damning. A blank bubble is honest — we have no opinion yet — and
+     *        the user's own tap on download is what starts the real scan.
      */
-    public void previewByName(String fileName, File plannedFile, Object parentObject) {
+    public void previewByName(String fileName, File plannedFile, Object parentObject, boolean scanWillFollow) {
         if (plannedFile == null || fileName == null || fileName.isEmpty()) {
             return;
         }
@@ -276,7 +293,10 @@ public final class ScanGate {
         final String declaredMime = TelegramContext.declaredMimeOf(parentObject);
         final long dialogId = TelegramContext.dialogIdOf(parentObject);
 
-        stateStore.setScanning(path, dialogId, false);
+        // Only claim to be checking when something is actually going to check.
+        if (scanWillFollow) {
+            stateStore.setScanning(path, dialogId, false);
+        }
 
         executor.execute(() -> {
             try {
@@ -290,8 +310,12 @@ public final class ScanGate {
                 }
                 ScanPolicy.Decision decision = ScanPolicy.INSTANCE.evaluate(early.getSignals());
                 if (decision.getVerdict() == Verdict.UNKNOWN) {
-                    // Nothing decisive. Leave the "scanning" state in place —
-                    // see the note above on why silence must not become a tick.
+                    // Nothing decisive. With a download on its way that means
+                    // leaving the "scanning" state in place — see the note
+                    // above on why silence must not become a tick. With no
+                    // download coming there is no state to leave, and none is
+                    // published: the bubble stays blank rather than spinning
+                    // for a verdict that was never going to arrive.
                     return;
                 }
                 stateStore.setResult(
@@ -482,6 +506,36 @@ public final class ScanGate {
         File released = quarantine.release(quarantined, destination);
         stateStore.markOverridden(released.getAbsolutePath());
         return released;
+    }
+
+    /**
+     * Accept the risk on a file that was warned about but never quarantined.
+     *
+     * <h3>Why this is separate from {@link #releaseAfterOverride}</h3>
+     *
+     * Quarantine is reserved for the unambiguous. A SUSPICIOUS verdict leaves
+     * the file exactly where it was — {@code ScanPolicy} deliberately does not
+     * take custody of a file it is not certain about — so there is nothing to
+     * move and {@code releaseAfterOverride} would be asked to release a file
+     * that was never held. It would throw, and the user would press the button
+     * that says "install anyway" and watch nothing happen.
+     *
+     * <p>What still has to happen is the bookkeeping: the state is marked
+     * overridden, so the red mark and the interception stop. Not the verdict —
+     * that stays, and the bubble goes on saying what the file is.
+     *
+     * <p>Takes both confirmations for the same reason its sibling does: the
+     * signature is the enforcement. A single-argument version of this method
+     * would be usable from a single tap.
+     */
+    public void acceptRisk(File file, boolean firstConfirm, boolean secondConfirm) {
+        if (!firstConfirm || !secondConfirm) {
+            throw new IllegalArgumentException("both confirmation steps are required to accept the risk");
+        }
+        if (file == null) {
+            return;
+        }
+        stateStore.markOverridden(file.getAbsolutePath());
     }
 
     /**

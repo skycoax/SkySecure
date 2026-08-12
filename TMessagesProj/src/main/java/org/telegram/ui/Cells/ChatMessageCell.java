@@ -1286,6 +1286,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
      * because the store publishes from the scan executor, not the UI thread.
      */
     private volatile String jacScanPath;
+    /** Lazily built; only a malicious file ever draws the mark. */
+    private Paint jacVirusPaint;
+    private final RectF jacVirusBounds = new RectF();
     /** The store this cell is subscribed to, or null while detached. */
     private uz.jac.secure.android.ScanStateStore jacListenerStore;
     /**
@@ -1341,6 +1344,106 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             invalidate();
         }
     };
+
+    /** The verdict for the file in this bubble, or null if there is none. */
+    private uz.jac.secure.android.ScanStateStore.State jacState() {
+        if (jacScanPath == null || !uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
+            return null;
+        }
+        try {
+            return uz.jac.secure.android.ScanGate.getInstance(currentAccount).getStateStore().get(jacScanPath);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * Stand between an ordinary tap and a file known to be malware.
+     *
+     * <h3>Why the tap and not only the button</h3>
+     *
+     * The verdict block below the file row already had an "Open anyway" button
+     * behind two dialogs. It guarded the door nobody uses. Tapping the file row
+     * itself went straight to {@code didPressImage} and out to an ACTION_VIEW
+     * intent, so the entire warning could be walked past by doing the one thing
+     * every person does with an attachment — tapping it.
+     *
+     * <h3>What it does not do</h3>
+     *
+     * It does not block. It replaces the open with the warning that explains
+     * what the file is, and the way through is still there underneath. Two
+     * cases deliberately fall through and open normally:
+     *
+     * <ul>
+     *   <li>A verdict the user has already overridden. They passed the
+     *       countdown and both confirmations once; making them do it again on
+     *       every tap would teach them to click through it faster.</li>
+     *   <li>No Activity to host a dialog. Refusing to open while being unable
+     *       to say why is the one outcome worse than opening.</li>
+     * </ul>
+     *
+     * @return true if the tap was consumed and the caller must not open
+     */
+    private boolean jacInterceptOpen() {
+        uz.jac.secure.android.ScanStateStore.State state = jacState();
+        if (state == null || !jacIsDangerous(state)) {
+            return false;
+        }
+        Activity activity = AndroidUtilities.findActivity(getContext());
+        if (activity == null || currentMessageObject == null) {
+            return false;
+        }
+        final int account = currentAccount;
+        // Same two paths as onOpenAnyway: the message can only produce the
+        // original path, and quarantine moved the bytes elsewhere.
+        final File destination = new File(jacScanPath);
+        final File held = new File(state.filePath != null ? state.filePath : jacScanPath);
+        final boolean quarantined = state.quarantined;
+        uz.jac.secure.android.QuarantineDialogs.showVirusWarning(activity, held, confirmed -> {
+            uz.jac.secure.android.ScanGate gate = uz.jac.secure.android.ScanGate.getInstance(account);
+            if (quarantined) {
+                gate.releaseAfterOverride(confirmed, destination, true, true);
+            } else {
+                // Warned about but never moved — a SUSPICIOUS verdict does not
+                // take custody. There is nothing to release, only the override
+                // to record.
+                gate.acceptRisk(confirmed, true, true);
+            }
+            // Open it. The user has just been through a countdown and two
+            // confirmations to get here; making them find and tap the file
+            // again would read as the app having ignored them.
+            if (delegate != null) {
+                delegate.didPressImage(this, 0, 0, false);
+            }
+        });
+        return true;
+    }
+
+    /**
+     * Is this the verdict the bubble is drawing in red?
+     *
+     * <h3>Why not simply {@code verdict == MALICIOUS}</h3>
+     *
+     * Because the text does not work that way, and the icon has to agree with
+     * the text. {@code jac_scan_suspicious_installer} — the title an APK with
+     * dangerous permissions gets — is the string "This file has a virus", and
+     * that file's verdict is SUSPICIOUS, not MALICIOUS. Keying the mark to the
+     * verdict produced exactly the bubble nobody should ever ship: a sentence
+     * saying the file is a virus, next to the same calm blue icon every
+     * harmless document has.
+     *
+     * <p>So the source of truth is {@link uz.jac.secure.android.ScanUi}, which
+     * is what chooses the words. If it paints the block in the danger colour,
+     * this is dangerous; if the wording rules change later, both follow.
+     */
+    private boolean jacIsDangerous(uz.jac.secure.android.ScanStateStore.State state) {
+        if (state == null || state.scanning || state.overridden) {
+            return false;
+        }
+        uz.jac.secure.android.ScanUi.Presentation p =
+                uz.jac.secure.android.ScanUi.present(getContext(), state);
+        return p != null && p.colour == uz.jac.secure.android.JacTheme.danger(getContext());
+    }
 
     /**
      * A verdict for the file in this bubble has arrived or changed.
@@ -6188,6 +6291,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             delegate.didPressImage(this, lastTouchX, lastTouchY, false);
         } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_DOCUMENT) {
             if (buttonState == -1) {
+                if (jacInterceptOpen()) {
+                    return;
+                }
                 delegate.didPressImage(this, lastTouchX, lastTouchY, false);
             }
         } else if (currentMessageObject.sponsoredMedia != null) {
@@ -18230,6 +18336,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 radialProgress.setProgress(0, false);
                 radialProgress.setMiniIcon(getMiniIconForCurrentState(), false, animated);
             }
+            if (jacInterceptOpen()) {
+                return;
+            }
             if (delegate != null) {
                 delegate.didPressImage(this, 0, 0, false);
             }
@@ -26334,6 +26443,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             text.draw(canvas, cx - w / 2f + dp(textPadding), cy, 0xFFFFFFFF, 1f - mediaSpoilerRevealProgress);
             canvas.restore();
         }
+
+        jacDrawVirusMark(canvas);
     }
 
     public int getTodoIndex(int taskId) {
@@ -26403,6 +26514,90 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             y += transitionParams.deltaTop;
         }
         return y + btn.height + dp(13);
+    }
+
+    /**
+     * SkySecure: a red virus mark over the blue document glyph.
+     *
+     * <h3>Where this has to live, and the two wrong answers</h3>
+     *
+     * The last line of {@link #drawOverlays}, which is the last thing the cell
+     * paints. Two earlier placements both looked right and both produced a
+     * bubble with no mark on it at all:
+     *
+     * <ul>
+     *   <li>Beside the rest of the document drawing — the file name, the size,
+     *       the verdict. That code runs, and then drawOverlays runs, and the
+     *       blue circle lands on top.</li>
+     *   <li>Immediately after {@code radialProgress.draw}. Reasonable, and
+     *       wrong for a different reason: that circle is not what the user is
+     *       looking at. For a document with no thumbnail the blue disc is
+     *       {@code photoImage} carrying {@code chat_docBackDrawable}, and
+     *       RadialProgress2 is only the download/cancel overlay on top of
+     *       it — which for an already-downloaded file draws nothing. The whole
+     *       branch is gated on {@code drawImageButton}, so for these bubbles it
+     *       never ran.</li>
+     * </ul>
+     *
+     * <h3>Why an overdraw and not a different icon</h3>
+     *
+     * The circle underneath belongs to the file row's normal machinery —
+     * download button, cancel button, play button, animated between states.
+     * Making it show a virus for one verdict would mean owning every one of
+     * those transitions. This paints over the finished result instead, only for
+     * a file already known to be malware, and stops the moment the user
+     * overrides the verdict — at which point the bubble goes back to being an
+     * ordinary file they have chosen to keep.
+     *
+     * <h3>Why the colour matters more than the glyph</h3>
+     *
+     * Every file bubble in the app is the same calm blue, so the eye classifies
+     * the row before a word of it is read. A warning that lives only in text
+     * underneath has already lost that race. Red where blue was expected is the
+     * one signal that lands before the tap.
+     */
+    private void jacDrawVirusMark(Canvas canvas) {
+        if (currentMessageObject == null || documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+            return;
+        }
+        uz.jac.secure.android.ScanStateStore.State state = jacState();
+        if (!jacIsDangerous(state)) {
+            return;
+        }
+        // The blue disc is the radial progress rect, not the photoImage box.
+        //
+        // Worth being precise about, because the two are laid out together and
+        // are not the same size: setProgressRect() gets dp(44) at buttonX, and
+        // photoImage is then parked at buttonX - dp(10) with a box dp(20)
+        // wider (ChatMessageCell#14325-14326). Measuring the mark from
+        // photoImage drew a circle a full dp(20) across bigger than the one it
+        // was covering, which is exactly how it looked.
+        //
+        // Taking the rect also means no tuning constant to drift: if upstream
+        // ever changes the button size, the mark follows it.
+        RectF disc = radialProgress.getProgressRect();
+        if (disc == null || disc.width() <= 0) {
+            return;
+        }
+        final float cx = disc.centerX();
+        final float cy = disc.centerY();
+        final float radius = disc.width() / 2f;
+
+        if (jacVirusPaint == null) {
+            jacVirusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        }
+        jacVirusPaint.setStyle(Paint.Style.FILL);
+        jacVirusPaint.setColor(uz.jac.secure.android.JacTheme.danger(getContext()));
+        canvas.drawCircle(cx, cy, radius, jacVirusPaint);
+
+        // White glyph on the red disc. The glyph punches its two cores out
+        // inside its own layer, so they land on the disc rather than on the
+        // bubble behind it.
+        jacVirusPaint.setColor(0xFFFFFFFF);
+        final float half = radius * 0.52f;
+        jacVirusBounds.set(cx - half, cy - half, cx + half, cy + half);
+        uz.jac.secure.android.JacIcons.draw(canvas,
+                uz.jac.secure.android.JacIcons.Glyph.VIRUS, jacVirusBounds, jacVirusPaint);
     }
 
     private Paint clipPaint;

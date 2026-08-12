@@ -40,6 +40,16 @@ public final class JacIcons {
         DEVICE,
         /** A ring. Scan in flight; callers rotate it. */
         SPINNER,
+        /**
+         * A spiked cell. Malware, in the one place the user is looking.
+         *
+         * Deliberately not {@link #BLOCK} or {@link #WARNING}. Those are the
+         * vocabulary of the app disagreeing with you — a barrier, a caution —
+         * and they sit in the same visual family as every "are you sure?" the
+         * user has already learned to tap through. This one names the thing
+         * instead, and it is the only glyph in the set that does.
+         */
+        VIRUS,
     }
 
     private JacIcons() {
@@ -87,6 +97,9 @@ public final class JacIcons {
                 break;
             case SPINNER:
                 drawSpinner(canvas, paint);
+                break;
+            case VIRUS:
+                drawVirus(canvas, paint);
                 break;
             default:
                 break;
@@ -154,6 +167,58 @@ public final class JacIcons {
         RectF body = new RectF(7f, 2.6f, 17f, 21.4f);
         canvas.drawRoundRect(body, 2.2f, 2.2f, paint);
         canvas.drawLine(10.4f, 18.6f, 13.6f, 18.6f, paint);
+    }
+
+    /**
+     * A filled body with eight radial spikes and two dark cores.
+     *
+     * Filled rather than stroked, unlike every other glyph here. At the 24 dp
+     * the message bubble draws it, an outlined cell of this shape collapses
+     * into a grey smudge, and the one icon that has to read instantly at a
+     * glance is the one that cannot afford to. The spikes are drawn as capped
+     * lines from a radius inside the body, so they emerge from it rather than
+     * touching it.
+     */
+    private static void drawVirus(Canvas canvas, Paint paint) {
+        final float cx = 12f, cy = 12f, body = 6.4f;
+
+        // The cores below are punched out with PorterDuff.CLEAR, which erases
+        // whatever it lands on. On the bare canvas that is the message bubble
+        // itself -- two holes straight through to the wallpaper. The layer is
+        // what confines the erase to this glyph, so the holes show the bubble
+        // instead of removing it. One saveLayer per icon, and only malicious
+        // files draw one at all.
+        int layer = canvas.saveLayer(0f, 0f, BOX, BOX, null);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.9f);
+        for (int i = 0; i < 8; i++) {
+            double angle = Math.PI * 2 * i / 8f;
+            float sin = (float) Math.sin(angle);
+            float cos = (float) Math.cos(angle);
+            canvas.drawLine(
+                    cx + cos * (body - 0.6f), cy + sin * (body - 0.6f),
+                    cx + cos * 10.2f, cy + sin * 10.2f, paint);
+            // A knob on each spike. Without it the shape reads as a sun or a
+            // gear; the bulb is what makes it a virus at thumbnail size.
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(cx + cos * 10.2f, cy + sin * 10.2f, 1.25f, paint);
+            paint.setStyle(Paint.Style.STROKE);
+        }
+
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(cx, cy, body, paint);
+
+        // The cores are punched out of the body, so they take the bubble
+        // colour behind the icon rather than a colour of their own. Anything
+        // else would need a second paint and would stop matching the tint the
+        // caller asked for.
+        paint.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR));
+        canvas.drawCircle(cx - 2.1f, cy - 1.4f, 1.5f, paint);
+        canvas.drawCircle(cx + 1.9f, cy + 2.0f, 1.15f, paint);
+        paint.setXfermode(null);
+
+        canvas.restoreToCount(layer);
     }
 
     private static void drawSpinner(Canvas canvas, Paint paint) {

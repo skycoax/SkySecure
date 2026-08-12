@@ -150,7 +150,24 @@ public final class ScanAutoStart {
                     return;
                 }
 
-                gate.previewByName(displayName, plannedFile, message);
+                // The download, unlike the name check, spends the user's money.
+                // Whether that is allowed right now is ScanSettings' question,
+                // not ours — and it has to be asked BEFORE the name preview,
+                // because the answer decides whether the preview is allowed to
+                // put a spinner on the bubble.
+                final boolean willFetch = ScanSettings.mayFetchForScan(message);
+
+                // Always, whatever the answer. Reading the name costs no
+                // network and no bytes, so there is no setting that should be
+                // able to switch it off — and it is the check that catches the
+                // right-to-left override, which is the whole attack in the case
+                // this product exists for. What the answer changes is only
+                // whether a quiet result leaves "checking..." on screen.
+                gate.previewByName(displayName, plannedFile, message, willFetch);
+
+                if (!willFetch) {
+                    return;
+                }
 
                 if (requestedDownload.add(account + ":" + plannedFile.getAbsolutePath())) {
                     // PRIORITY_LOW: this download is our idea, not the user's.
