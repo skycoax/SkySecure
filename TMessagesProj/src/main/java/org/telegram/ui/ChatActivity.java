@@ -40413,6 +40413,22 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
+        // SkySecure: a scan finished (or a preview verdict landed) for the file
+        // in this bubble. The verdict is drawn inside the bubble, so the row is
+        // now a different height and the adapter has to be told — the same three
+        // steps every other height-changing path in this class takes.
+        @Override
+        public void didChangeScanVerdict(ChatMessageCell cell) {
+            MessageObject msg = cell.getMessageObject();
+            if (msg == null || chatAdapter == null) {
+                return;
+            }
+            msg.forceUpdate = true;
+            cell.forceResetMessageObject();
+            cell.requestLayout();
+            chatAdapter.updateRowWithMessageObject(msg, false, false);
+        }
+
         @Override
         public void didPressChannelRecommendationsClose(ChatMessageCell cell) {
             MessageObject msg = cell.getMessageObject();

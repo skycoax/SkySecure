@@ -1055,6 +1055,17 @@ public class FileLoader extends BaseController {
                     delegate.fileDidFailedLoad(fileName, reason);
                 }
 
+                // JAC Secure: a download the scanner started on its own has
+                // failed. It published a provisional "scanning" state when it
+                // asked for the bytes, and nothing else will ever clear it — the
+                // bubble would show a spinner for a verdict that can no longer
+                // arrive. Ignored for every download the scanner did not start.
+                if (parentObject instanceof MessageObject) {
+                    uz.jac.secure.android.ScanAutoStart.onDownloadFailed(
+                            currentAccount,
+                            getPathToMessage(((MessageObject) parentObject).messageOwner, false));
+                }
+
                 if (document != null && parentObject instanceof MessageObject && reason == 0) {
                     getDownloadController().onDownloadFail((MessageObject) parentObject, reason);
                 } else if (reason == -1) {

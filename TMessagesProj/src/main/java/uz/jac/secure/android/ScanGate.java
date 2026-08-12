@@ -6,12 +6,14 @@ import android.os.Looper;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import uz.jac.secure.core.engine.ScanEngine;
+import uz.jac.secure.core.engine.ScanPolicy;
 import uz.jac.secure.core.model.FileMeta;
 import uz.jac.secure.core.model.ScanMode;
 import uz.jac.secure.core.model.ScanResult;
@@ -50,11 +52,39 @@ public final class ScanGate {
 
     private static final Map<Integer, ScanGate> INSTANCES = new ConcurrentHashMap<>();
 
+    /** Source label for a verdict reached from the filename and nothing else. */
+    private static final String SOURCE_FILENAME = "local_filename";
+
+    private static final byte[] EMPTY_HEAD = new byte[0];
+
+    /** For entry points where nothing is waiting on the file. */
+    private static final Continuation NO_CONTINUATION = file -> {
+    };
+
     private final ExecutorService executor;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ScanStateStore stateStore;
     private final QuarantineStore quarantine;
     private final ScanEngineProvider engines;
+
+    /**
+     * Paths a full scan has already been started for.
+     *
+     * The idempotence guard for {@link #ensureScanned}, whose caller is message
+     * binding — a method that runs again on every scroll, every relayout and
+     * every recycled cell. Without it a visible file would be re-hashed
+     * continuously for as long as it stayed on screen.
+     *
+     * Deliberately NOT the state store. A scan that failed left a terminal
+     * state behind, and treating "has a state" as "needs no scan" is right;
+     * treating "has no state" as "scan it again" would retry a hopeless file on
+     * every frame. This set answers the narrower question the guard actually
+     * needs: have we tried yet.
+     */
+    private final Set<String> fullyScanned = ConcurrentHashMap.newKeySet();
+
+    /** Paths a filename preview has already run for. See {@link #previewByName}. */
+    private final Set<String> previewed = ConcurrentHashMap.newKeySet();
 
     /**
      * Supplies a configured engine per scan mode. Injected rather than
@@ -128,14 +158,177 @@ public final class ScanGate {
         final String displayName = fileName != null ? fileName : finalFile.getName();
         final long dialogId = TelegramContext.dialogIdOf(parentObject);
 
+        // Claim the path before scanning. This scan is the authoritative one —
+        // it has the streaming digest and the complete bytes — and the moment it
+        // publishes, the cell rebinds and calls ensureScanned again. Without the
+        // mark that call would see a file that now exists on disk and start a
+        // second, redundant scan of it.
+        fullyScanned.add(finalFile.getAbsolutePath());
+
         stateStore.setScanning(finalFile.getAbsolutePath(), dialogId);
+        scanAndPublish(finalFile, displayName, declaredMime, mode, dialogId, streamingSha256, continuation);
+    }
+
+    /**
+     * Scan a file that is ALREADY on disk, with no download to hang off.
+     *
+     * <h3>Why this exists</h3>
+     *
+     * {@link #onFileLoaded} fires exactly once per download, at the moment the
+     * last byte lands. That covers a file the first time it arrives and never
+     * again. Everything else was invisible:
+     *
+     * <ul>
+     *   <li>A file downloaded before this build was installed, or before the
+     *       scanner was switched on. It sits in the cache with no verdict and
+     *       nothing will ever produce one.</li>
+     *   <li>A file whose verdict was lost — the state store is rebuilt from disk
+     *       at startup, and anything it fails to restore is simply gone.</li>
+     *   <li>Any file the user downloaded by tapping it in an earlier session.
+     *       Opening the chat again showed a bubble with no verdict, which reads
+     *       as "checked, nothing found" and is the most dangerous thing a
+     *       scanner can render.</li>
+     * </ul>
+     *
+     * <h3>How it differs from the two existing entry points</h3>
+     *
+     * It quarantines, exactly like {@link #onFileLoaded} and unlike
+     * {@link #onOutgoingFile}. The distinction is ownership, not direction: this
+     * file is in Telegram's cache because <em>we</em> put it there, so moving it
+     * destroys nothing the user chose to keep. {@code onOutgoingFile} refuses to
+     * quarantine because that file is the user's own and may be their only copy.
+     *
+     * <p>There is no continuation, because nothing is waiting: the bytes are
+     * already available to every other component. That is a real weakening
+     * against the download path, where the file is not announced until it has a
+     * verdict — here it can be opened during the second or two the scan takes.
+     * {@link #isExportAllowed} returns false while {@code state.scanning}, which
+     * is what closes that window at the call sites that consult it.
+     *
+     * <p>Idempotent, and it has to be: the call site is message binding, which
+     * runs again on every scroll and every relayout.
+     */
+    public void ensureScanned(String fileName, File file, Object parentObject) {
+        if (file == null || !file.exists() || file.length() == 0) {
+            return;
+        }
+        // add() returns false when the path is already present, so the whole
+        // method is a no-op from the second call onward. Not a substitute for
+        // the state store: a scan that is still in flight has published a
+        // "scanning" state, but a scan that FAILED published a terminal one, and
+        // re-running it on every bind would retry a hopeless file forever.
+        if (!fullyScanned.add(file.getAbsolutePath())) {
+            return;
+        }
+
+        final ScanMode mode = TelegramContext.scanModeFor(parentObject);
+        final String declaredMime = TelegramContext.declaredMimeOf(parentObject);
+        final String displayName = fileName != null ? fileName : file.getName();
+        final long dialogId = TelegramContext.dialogIdOf(parentObject);
+
+        stateStore.setScanning(file.getAbsolutePath(), dialogId, false);
+        // null digest: nothing streamed, so the engine hashes the finished file.
+        // That is a second full pass over the bytes, which is why the download
+        // path goes to the trouble of hashing on the way past.
+        scanAndPublish(file, displayName, declaredMime, mode, dialogId, null, NO_CONTINUATION);
+    }
+
+    /**
+     * Publish what the FILENAME alone says, for a file that is not on disk yet.
+     *
+     * <h3>Why a verdict before the bytes</h3>
+     *
+     * The name is the whole attack in the case this product exists for.
+     * {@code hisobot<U+202E>gpj.apk} is stored as an APK and renders as
+     * {@code hisobotkpa.jpg}; a double extension, a right-to-left override and a
+     * dangerous extension are all decidable with zero bytes downloaded. Waiting
+     * for the download to say so means the user stares at an unlabelled bubble
+     * for as long as the file takes to arrive — and on a large file that is
+     * exactly the window in which they decide to tap it.
+     *
+     * <p>So this publishes twice. First a plain "scanning" state, synchronously,
+     * so the bubble stops looking unexamined the instant the chat opens. Then,
+     * off-thread, the name analysis — and only if it found something worth
+     * saying. A quiet result deliberately leaves the "scanning" state alone
+     * rather than replacing it with a verdict: local heuristics are not allowed
+     * to say CLEAN (see {@code ScanPolicy}), and "we read the name and it looked
+     * ordinary" must never render as a green tick on a file nobody has opened.
+     *
+     * <p>Whatever this concludes is provisional. {@link #onFileLoaded} clears the
+     * mark and overwrites the state when the bytes land.
+     */
+    public void previewByName(String fileName, File plannedFile, Object parentObject) {
+        if (plannedFile == null || fileName == null || fileName.isEmpty()) {
+            return;
+        }
+        final String path = plannedFile.getAbsolutePath();
+        if (!previewed.add(path)) {
+            return;
+        }
+        // A guess from the filename must never displace a verdict reached from
+        // the actual bytes — including the quarantine case, where the file has
+        // been moved away and its absence must not read as "not downloaded yet".
+        if (stateStore.get(path) != null) {
+            return;
+        }
+
+        final ScanMode mode = TelegramContext.scanModeFor(parentObject);
+        final String declaredMime = TelegramContext.declaredMimeOf(parentObject);
+        final long dialogId = TelegramContext.dialogIdOf(parentObject);
+
+        stateStore.setScanning(path, dialogId, false);
 
         executor.execute(() -> {
-            File result = finalFile;
+            try {
+                // An empty head is not a degraded call: MagicBytes.check returns
+                // UNKNOWN when it cannot sniff anything, so inspectHead reduces
+                // cleanly to the filename analysis and reports only name signals.
+                FileMeta meta = new FileMeta(fileName, declaredMime, 0L);
+                ScanEngine.EarlyWarning early = engines.engineFor(mode).inspectHead(EMPTY_HEAD, meta);
+                if (early.getSignals().isEmpty()) {
+                    return;
+                }
+                ScanPolicy.Decision decision = ScanPolicy.INSTANCE.evaluate(early.getSignals());
+                if (decision.getVerdict() == Verdict.UNKNOWN) {
+                    // Nothing decisive. Leave the "scanning" state in place —
+                    // see the note above on why silence must not become a tick.
+                    return;
+                }
+                stateStore.setResult(
+                        path,
+                        new ScanResult(decision.getVerdict(), SOURCE_FILENAME, early.getSignals(), null,
+                                decision.getDetail()),
+                        false);
+            } catch (Throwable t) {
+                // A failed preview is not worth reporting: the real scan is
+                // already on its way and will publish the authoritative answer.
+                android.util.Log.d("jac", "name preview failed for " + fileName + ": " + t);
+            }
+        });
+    }
+
+    /**
+     * The shared tail of every scan: run the engine, quarantine if the verdict
+     * demands it, publish, then hand the file onward.
+     *
+     * Callers publish the "scanning" state themselves before calling, because
+     * only they know whether a preview state is being replaced.
+     */
+    private void scanAndPublish(
+            File file,
+            String displayName,
+            String declaredMime,
+            ScanMode mode,
+            long dialogId,
+            String streamingSha256,
+            Continuation continuation
+    ) {
+        executor.execute(() -> {
+            File result = file;
             ScanResult scan;
             try {
-                FileMeta meta = new FileMeta(displayName, declaredMime, finalFile.length());
-                scan = engines.engineFor(mode).scan(finalFile, meta, streamingSha256);
+                FileMeta meta = new FileMeta(displayName, declaredMime, file.length());
+                scan = engines.engineFor(mode).scan(file, meta, streamingSha256);
             } catch (Throwable t) {
                 // The scanner must never be able to lose a download. Any failure
                 // degrades to "unknown" and the file is released — the alternative
@@ -144,12 +337,12 @@ public final class ScanGate {
             }
 
             if (scan.getVerdict() == Verdict.MALICIOUS) {
-                result = quarantine.quarantine(finalFile, scan.getSha256());
+                result = quarantine.quarantine(file, scan.getSha256());
             }
 
             stateStore.setResult(result.getAbsolutePath(), scan, quarantine.isQuarantined(result));
-            if (!result.getAbsolutePath().equals(finalFile.getAbsolutePath())) {
-                stateStore.repoint(dialogId, finalFile.getAbsolutePath(), result.getAbsolutePath());
+            if (!result.getAbsolutePath().equals(file.getAbsolutePath())) {
+                stateStore.repoint(dialogId, file.getAbsolutePath(), result.getAbsolutePath());
                 // Keep the ORIGINAL path resolving too. It used to be forgotten
                 // here, which read as tidy and silently broke the only case that
                 // matters: quarantine moves the file, but nothing writes the new
@@ -157,7 +350,7 @@ public final class ScanGate {
                 // still answers with the original cache path — the only key the
                 // bubble ever has. Dropping it meant a MALICIOUS file showed no
                 // verdict at all while clean and suspicious ones showed theirs.
-                stateStore.alias(finalFile.getAbsolutePath(), result.getAbsolutePath());
+                stateStore.alias(file.getAbsolutePath(), result.getAbsolutePath());
             }
 
             final File delivered = result;
@@ -289,6 +482,36 @@ public final class ScanGate {
         File released = quarantine.release(quarantined, destination);
         stateStore.markOverridden(released.getAbsolutePath());
         return released;
+    }
+
+    /**
+     * Withdraw a provisional state for a file that is never going to arrive.
+     *
+     * A file we started downloading ourselves publishes "scanning…" the moment
+     * it is requested, because from the user's point of view the check has
+     * begun. If that download then fails — no network, a dead file reference,
+     * the user clearing the queue — the verdict it was standing in for can
+     * never be published, and without this the bubble spins forever. A
+     * permanent "checking…" is worse than a blank one: it claims work is
+     * happening, so the user waits instead of deciding.
+     *
+     * <p>Refuses to touch a state that has already been decided. By the time a
+     * failure is reported the scan may have completed from another path, and
+     * erasing a real verdict here would be a silent downgrade.
+     */
+    public void forgetPreview(File plannedFile) {
+        if (plannedFile == null) {
+            return;
+        }
+        final String path = plannedFile.getAbsolutePath();
+        ScanStateStore.State state = stateStore.get(path);
+        if (state == null || !state.scanning) {
+            return;
+        }
+        stateStore.retract(path);
+        // Both guards released, so a later attempt is free to try again.
+        previewed.remove(path);
+        fullyScanned.remove(path);
     }
 
     public ScanStateStore getStateStore() {

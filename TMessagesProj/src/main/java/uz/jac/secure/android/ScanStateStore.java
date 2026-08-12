@@ -153,6 +153,13 @@ public final class ScanStateStore {
      * So the state stays reachable under both keys. The alias is not a copy:
      * both map to the same State instance, so an override published later is
      * visible through either path.
+     *
+     * <p>Announced, not merely stored. The message bubble subscribes under the
+     * path it can compute — the original one — so writing the alias silently
+     * left the one cell that needed telling waiting on a notification that
+     * never came. It spun "checking…" until the chat was closed and reopened,
+     * at which point the rebind read this map directly and the verdict finally
+     * appeared. The verdict was never missing; the news was.
      */
     void alias(String originalPath, String quarantinedPath) {
         if (originalPath == null || quarantinedPath == null || originalPath.equals(quarantinedPath)) {
@@ -160,7 +167,7 @@ public final class ScanStateStore {
         }
         State state = states.get(quarantinedPath);
         if (state != null) {
-            states.put(originalPath, state);
+            publish(originalPath, state);
         }
     }
 
@@ -208,7 +215,28 @@ public final class ScanStateStore {
     }
 
     void setScanning(String path, long dialogId) {
-        if (dialogId != 0) {
+        setScanning(path, dialogId, true);
+    }
+
+    /**
+     * @param indexDialog whether this file should become the conversation's
+     *                    entry in {@link #latestByDialog}.
+     *
+     * <p>False for scans that were our idea rather than the user's — see
+     * {@link ScanGate#ensureScanned} and {@link ScanGate#previewByName}. Those
+     * fire on message binding, so they run in whatever order the list happens
+     * to bind cells: scroll up through a year of history and the last one to
+     * bind is the OLDEST document in the chat.
+     *
+     * <p>The index means "the file behind the row's preview line", which is the
+     * latest message — that is why it keeps the last scanned file rather than
+     * the worst one. Letting binding write to it would have the chat-list row
+     * report a verdict for a message the user cannot see, and change which one
+     * every time they scrolled. The download and outgoing paths still index,
+     * because those genuinely happen in message order.
+     */
+    void setScanning(String path, long dialogId, boolean indexDialog) {
+        if (indexDialog && dialogId != 0) {
             latestByDialog.put(dialogId, path);
         }
         publish(path, new State(true, Verdict.UNKNOWN, null, null, false, false, null, path));
@@ -266,6 +294,27 @@ public final class ScanStateStore {
 
     void forget(String path) {
         states.remove(path);
+    }
+
+    /**
+     * Drop a state AND tell the listeners it is gone.
+     *
+     * {@link #forget} is silent, which is right for eviction but wrong for a
+     * retraction: a bubble showing "scanning…" has to be told to stop, and a
+     * cell that is never notified keeps that spinner until the chat is closed
+     * and reopened — the exact failure this whole listener path exists to end.
+     *
+     * Listeners receive a null state, meaning "there is nothing known about
+     * this file", which is a different claim from any verdict and must not be
+     * rendered as one.
+     */
+    void retract(String path) {
+        if (states.remove(path) == null) {
+            return;
+        }
+        for (Listener listener : listeners) {
+            listener.onScanStateChanged(path, null);
+        }
     }
 
     private void publish(String path, State state) {
