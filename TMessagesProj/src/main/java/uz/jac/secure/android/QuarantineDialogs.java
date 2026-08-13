@@ -2,6 +2,9 @@ package uz.jac.secure.android;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -200,6 +203,83 @@ public final class QuarantineDialogs {
     }
 
     /**
+     * The warning tone that runs under the countdown.
+     *
+     * <h3>Why a tone and not a bundled sound</h3>
+     *
+     * {@link ToneGenerator} is in the platform, so this adds nothing to the
+     * APK and needs no permission. It also cannot fail into silence the way a
+     * missing asset would.
+     *
+     * <h3>Why the alarm stream</h3>
+     *
+     * The notification stream is where a phone in a meeting is already muted,
+     * and this is the one sound in the app that has to arrive. The alarm stream
+     * is the loudest honest choice: it is what the platform reserves for
+     * "something needs you now".
+     *
+     * <h3>What it will not do</h3>
+     *
+     * Nothing at all in silent mode. A phone set to silent is a deliberate
+     * instruction from its owner, usually given in a room where a siren would
+     * be worse than the risk it warns about, and an app that overrides it
+     * teaches people to distrust the app rather than the file. The countdown,
+     * the red disc and the text all still work without a sound.
+     *
+     * <p>Every method is safe to call on a broken or absent generator: audio
+     * routing is one of the flakiest surfaces on Android, and a warning dialog
+     * that crashes instead of warning would be the worst possible trade.
+     */
+    private static final class Alarm {
+
+        private ToneGenerator generator;
+
+        Alarm(Activity activity) {
+            try {
+                AudioManager audio = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
+                if (audio != null && audio.getRingerMode() == AudioManager.RINGER_MODE_SILENT) {
+                    return;
+                }
+                generator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+            } catch (Throwable ignored) {
+                generator = null;
+            }
+        }
+
+        /** One second of the countdown. */
+        void beep() {
+            play(ToneGenerator.TONE_CDMA_ABBR_ALERT, 350);
+        }
+
+        /** The countdown is over and the buttons are live. */
+        void finish() {
+            play(ToneGenerator.TONE_PROP_ACK, 200);
+        }
+
+        void release() {
+            ToneGenerator local = generator;
+            generator = null;
+            if (local != null) {
+                try {
+                    local.release();
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+
+        private void play(int tone, int durationMs) {
+            ToneGenerator local = generator;
+            if (local == null) {
+                return;
+            }
+            try {
+                local.startTone(tone, durationMs);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    /**
      * Shared chrome for both steps: a card, an overline counter, a glyph, a
      * title, a body, and a vertical button stack.
      *
@@ -382,6 +462,14 @@ public final class QuarantineDialogs {
             setActionsEnabled(primary, muted, false);
             primary.setText(label + "  " + remaining[0]);
 
+            final Alarm alarm = new Alarm(activity);
+            alarm.beep();
+            // Released on dismissal however the dialog goes away -- the button,
+            // the caller, or the activity dying under it. A ToneGenerator holds
+            // an AudioTrack, and one leaked per warning would eventually take
+            // the device's audio out.
+            dialog.setOnDismissListener(d -> alarm.release());
+
             final Runnable[] tick = new Runnable[1];
             tick[0] = () -> {
                 // The dialog can be gone: dismissed by the caller, or the
@@ -389,15 +477,22 @@ public final class QuarantineDialogs {
                 // leak at best, so the countdown checks before every step and
                 // simply stops.
                 if (!dialog.isShowing()) {
+                    alarm.release();
                     return;
                 }
                 remaining[0]--;
                 if (remaining[0] > 0) {
                     primary.setText(label + "  " + remaining[0]);
+                    alarm.beep();
                     primary.postDelayed(tick[0], 1000L);
                 } else {
                     primary.setText(label);
                     setActionsEnabled(primary, muted, true);
+                    // One last, different tone: the countdown is over and the
+                    // buttons are live. Without it the silence is ambiguous --
+                    // the user cannot tell "still waiting" from "you may press
+                    // now" without looking back at the button.
+                    alarm.finish();
                 }
             };
             primary.postDelayed(tick[0], 1000L);

@@ -191,9 +191,6 @@ public final class ScanVerdictBlock {
 
         int y = JacTheme.dp(context, 10);              // gap under the hairline
         y += Math.max(icon, titleLayout.getHeight());
-        if (scanning) {
-            y += JacTheme.dp(context, 8) + JacTheme.dp(context, PROGRESS_HEIGHT_DP);
-        }
         if (bodyLayout != null) {
             y += JacTheme.dp(context, 5) + bodyLayout.getHeight();
         }
@@ -252,11 +249,10 @@ public final class ScanVerdictBlock {
 
         y += Math.max(icon, titleLayout.getHeight());
 
-        if (scanning) {
-            y += JacTheme.dp(context, 8);
-            drawProgress(canvas, y);
-            y += JacTheme.dp(context, PROGRESS_HEIGHT_DP);
-        }
+        // No progress bar. It was a second indeterminate animation directly
+        // under the first one, saying the same thing the spinning glyph
+        // already says, and it made the block read as a download in progress
+        // -- which is the one thing the user must not confuse a scan with.
 
         if (bodyLayout != null) {
             y += JacTheme.dp(context, 5);

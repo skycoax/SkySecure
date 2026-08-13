@@ -60,6 +60,15 @@ public final class ScanGate {
 
     private static final byte[] EMPTY_HEAD = new byte[0];
 
+    /**
+     * How long a scan may say "checking" before that becomes a lie.
+     *
+     * Twelve seconds is past the point where a user reads the spinner as a
+     * hang, and long enough that a hash of a large file plus one network
+     * round-trip finishes comfortably inside it on a slow connection.
+     */
+    private static final long SCAN_DEADLINE_MS = 12_000L;
+
     /** For entry points where nothing is waiting on the file. */
     private static final Continuation NO_CONTINUATION = file -> {
     };
@@ -352,6 +361,27 @@ public final class ScanGate {
             String streamingSha256,
             Continuation continuation
     ) {
+        // A scan that never answers must not spin forever.
+        //
+        // Every stage has its own timeout, and the sum of them is longer than
+        // anyone will wait; worse, a thread that wedges has no timeout at all.
+        // The user's complaint is exact: a spinner that never resolves is worse
+        // than a warning, because they wait instead of deciding, and then they
+        // decide anyway with no information.
+        //
+        // So the deadline belongs here, above the engine: after SCAN_DEADLINE_MS
+        // the state becomes a terminal "could not check", which is a warning,
+        // not a verdict. If the real answer arrives later it overwrites this --
+        // setResult does not consult the deadline.
+        final String deadlinePath = file.getAbsolutePath();
+        mainHandler.postDelayed(() -> {
+            ScanStateStore.State state = stateStore.get(deadlinePath);
+            if (state != null && state.scanning) {
+                stateStore.setResult(deadlinePath,
+                        ScanResult.Companion.unknown("scan timed out"), false);
+            }
+        }, SCAN_DEADLINE_MS);
+
         executor.execute(() -> {
             File result = file;
             ScanResult scan;
@@ -511,6 +541,45 @@ public final class ScanGate {
         File released = quarantine.release(quarantined, destination);
         stateStore.markOverridden(released.getAbsolutePath());
         return released;
+    }
+
+    /**
+     * Say "this installs an app and nobody has checked it" straight away.
+     *
+     * <p>No network, no disk, no thread hop -- it publishes a state and
+     * returns, so it is safe to call from message binding. The store refuses to
+     * overwrite anything it already knows, so a scan in flight or a finished
+     * verdict always wins.
+     */
+    public void markUnchecked(File plannedFile, Object parentObject) {
+        if (plannedFile == null) {
+            return;
+        }
+        // Never mark a file we could be checking right now. The mark exists for
+        // files with no bytes on the device; putting it on one that is already
+        // downloaded turns "check this" into a dead end.
+        if (plannedFile.exists() && plannedFile.length() > 0) {
+            return;
+        }
+        stateStore.setUnchecked(plannedFile.getAbsolutePath(), TelegramContext.dialogIdOf(parentObject));
+    }
+
+    /**
+     * The scan the user asked for by tapping the file.
+     *
+     * <p>Separate from {@link #ensureScanned} because that one is idempotent
+     * against a mark set on the first attempt; a user who taps "check" after a
+     * failure means it, so the guards are cleared first.
+     */
+    public void rescan(String fileName, File file, Object parentObject) {
+        if (file == null) {
+            return;
+        }
+        final String path = file.getAbsolutePath();
+        fullyScanned.remove(path);
+        previewed.remove(path);
+        stateStore.forget(path);
+        ensureScanned(fileName, file, parentObject);
     }
 
     /**

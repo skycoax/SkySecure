@@ -333,7 +333,7 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         telegramLogoView = new ImageView(context);
-        telegramLogoView.setContentDescription(getString(R.string.AppName));
+        telegramLogoView.setContentDescription(context.getResources().getString(R.string.app_name));
         telegramLogoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         // Humogram: our own wordmark. Same 90x22dp footprint as the artwork it
         // replaces, so the layout and the colour filter below are untouched.

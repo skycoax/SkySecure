@@ -103,6 +103,36 @@ def check_no_telegram_wordmark_drawables():
     check('no code draws Telegram\'s wordmark', not hits, ', '.join(hits))
 
 
+def check_identity_bypasses_cloud_strings():
+    """The app's own name must not be read through LocaleController.
+
+    LocaleController resolves from Telegram's downloaded language pack before
+    it looks at res/, and that pack defines AppName as "Telegram". Renaming the
+    app in strings.xml therefore worked only until the pack synced -- the fork
+    called itself Humogram on first launch and Telegram from then on, which is
+    the impersonation problem the rename was supposed to fix.
+
+    So the identity surfaces must read the resource directly.
+    """
+    sites = [
+        ('org/telegram/ui/DialogsActivity.java', 'chat list title'),
+        ('org/telegram/ui/IntroActivity.java', 'first-launch title'),
+    ]
+    for rel, what in sites:
+        path = os.path.join(JAVA, *rel.split('/'))
+        if not os.path.exists(path):
+            continue
+        offenders = [
+            '%s:%d' % (rel, n)
+            for n, line in enumerate(read(path).splitlines(), 1)
+            if ('R.string.AppName' in line or 'R.string.Page1Title' in line)
+            and 'getResources()' not in line
+            and not line.strip().startswith('//')
+        ]
+        check('%s does not go through the language pack' % what, not offenders,
+              ', '.join(offenders))
+
+
 def check_app_name_is_ours():
     for path in value_files():
         for key in ('AppName', 'AppNameBeta', 'app_name', 'Page1Title'):
@@ -298,6 +328,7 @@ def main():
     print('Humogram store-readiness checks\n')
     for group, fn in [
         ('impersonation', check_no_telegram_wordmark_drawables),
+        ('impersonation', check_identity_bypasses_cloud_strings),
         ('impersonation', check_app_name_is_ours),
         ('impersonation', check_single_launcher_identity),
         ('impersonation', check_splash_is_ours),

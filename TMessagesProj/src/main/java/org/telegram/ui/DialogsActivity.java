@@ -3525,7 +3525,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 // third-party app was headed by Telegram's trademark. That is
                 // Play's Impersonation policy and Telegram's own API Terms 2.4
                 // in one line, on the first screen after login.
-                actionBar.setTitle(getString(R.string.AppName), statusDrawable);
+                // getResources(), NOT getString(): LocaleController resolves from
+                // Telegram's downloaded language pack first, and that pack has
+                // an AppName entry saying "Telegram". Going through it renamed
+                // the app only until the pack synced, after which every user
+                // saw Telegram again. app_name is ours and exists in no pack.
+                actionBar.setTitle(ApplicationLoader.applicationContext.getResources().getString(R.string.app_name), statusDrawable);
                 updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
             }
             if (folderId == 0) {

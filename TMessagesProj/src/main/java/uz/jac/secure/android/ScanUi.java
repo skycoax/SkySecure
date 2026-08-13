@@ -164,6 +164,23 @@ public final class ScanUi {
         if (state == null) {
             return null;
         }
+        // Not checked yet, and it installs an app. Amber, not red and not
+        // neutral: we are not claiming this file is malicious -- we know
+        // nothing about it -- but "nothing known about an installer" is the
+        // state in which people lose their bank accounts, and a blank bubble
+        // reads as approval.
+        if (state.unchecked) {
+            // Red, not amber, and worded as a finding rather than a caution.
+            // Product decision -- see ChatMessageCell#jacIsInstaller for what it
+            // costs and why it was taken anyway.
+            return new Presentation(
+                    JacIcons.Glyph.VIRUS,
+                    JacTheme.danger(context),
+                    JacStrings.get(context, R.string.jac_unchecked_title),
+                    JacStrings.get(context, R.string.jac_unchecked_body),
+                    false,
+                    JacStrings.get(context, R.string.jac_unchecked_title));
+        }
         if (state.scanning) {
             return new Presentation(
                     JacIcons.Glyph.SPINNER,
@@ -172,6 +189,18 @@ public final class ScanUi {
                     null,
                     false,
                     JacStrings.get(context, R.string.jac_scan_scanning));
+        }
+        // A check that ran out of time is a warning, not a result. Rendering it
+        // as the ordinary UNKNOWN ("checked, nothing known") would turn a
+        // failure into reassurance.
+        if (state.verdict == Verdict.UNKNOWN && state.detail != null && state.detail.contains("timed out")) {
+            return new Presentation(
+                    JacIcons.Glyph.WARNING,
+                    JacTheme.warning(context),
+                    JacStrings.get(context, R.string.jac_scan_timeout_title),
+                    JacStrings.get(context, R.string.jac_scan_timeout_body),
+                    false,
+                    JacStrings.get(context, R.string.jac_scan_timeout_title));
         }
 
         ScanFinding lead = leadFinding(state);

@@ -156,7 +156,9 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
         // Humogram: plain text, not Telegram's wordmark. See DialogsActivity
         // for the same change; this is the very first screen of a first launch,
         // so it was the worst of the three.
-        titles[0] = LocaleController.getString(R.string.Page1Title);
+        // Resources directly -- see DialogsActivity: the language pack
+        // overrides Page1Title with "Telegram".
+        titles[0] = context.getResources().getString(R.string.app_name);
 
 
         actionBar.setAddToContainer(false);

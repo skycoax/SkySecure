@@ -31,6 +31,23 @@ public final class ScanStateStore {
 
     public static final class State {
         public final boolean scanning;
+        /**
+         * An installer nobody has checked yet.
+         *
+         * <h3>The gap this fills, which was the whole product failing</h3>
+         *
+         * An APK arrives and is not downloaded, so there is nothing to scan and
+         * the bubble said nothing at all. A bubble with no warning does not
+         * read as "not checked"; it reads as "checked, fine". The user taps it,
+         * and the one moment the scanner exists for has already passed.
+         *
+         * So an installable file is marked the instant it is seen, before a
+         * single byte is fetched. Not a verdict -- we know nothing about this
+         * file yet -- which is why it is a flag of its own rather than a
+         * SUSPICIOUS verdict. It says only: this can install an app, and it
+         * has not been checked.
+         */
+        public final boolean unchecked;
         public final Verdict verdict;
         /**
          * The scanner's English explanation. A fallback only — see
@@ -68,7 +85,13 @@ public final class ScanStateStore {
 
         State(boolean scanning, Verdict verdict, String detail, String source,
               boolean quarantined, boolean overridden, List<ScanFinding> findings, String filePath) {
+            this(scanning, false, verdict, detail, source, quarantined, overridden, findings, filePath);
+        }
+
+        State(boolean scanning, boolean unchecked, Verdict verdict, String detail, String source,
+              boolean quarantined, boolean overridden, List<ScanFinding> findings, String filePath) {
             this.scanning = scanning;
+            this.unchecked = unchecked;
             this.verdict = verdict;
             this.detail = detail;
             this.source = source;
@@ -240,6 +263,22 @@ public final class ScanStateStore {
             latestByDialog.put(dialogId, path);
         }
         publish(path, new State(true, Verdict.UNKNOWN, null, null, false, false, null, path));
+    }
+
+    /**
+     * Mark an installer as seen but unchecked, immediately and offline.
+     *
+     * <p>Published before any download, so the warning is on screen at the
+     * moment the user is deciding rather than after they have decided. Refuses
+     * to overwrite anything already known: a real verdict, or a scan already
+     * running, both say more than this does.
+     */
+    void setUnchecked(String path, long dialogId) {
+        State existing = states.get(path);
+        if (existing != null) {
+            return;
+        }
+        publish(path, new State(false, true, Verdict.UNKNOWN, null, null, false, false, null, path));
     }
 
     void setResult(String path, ScanResult result, boolean quarantined) {

@@ -138,7 +138,16 @@ public final class ScanAutoStart {
                 // two lines would overwrite the MALICIOUS verdict with a fresh
                 // "scanning" state and re-download the very file we had just
                 // taken away from the user.
-                if (gate.getStateStore().get(plannedFile.getAbsolutePath()) != null) {
+                // "Not checked yet" is the one state that must NOT block what
+                // comes next. It is a placeholder meaning we know nothing, and
+                // it is written for every installer the moment it is seen -- so
+                // treating it like a verdict left the file marked amber
+                // forever: the bytes arrived, the cell rebound, and this guard
+                // sent it straight back out before ensureScanned could run. The
+                // file downloaded and was never checked.
+                uz.jac.secure.android.ScanStateStore.State known =
+                        gate.getStateStore().get(plannedFile.getAbsolutePath());
+                if (known != null && !known.unchecked) {
                     return;
                 }
                 if (failedDownload.contains(account + ":" + plannedFile.getAbsolutePath())) {
@@ -146,8 +155,34 @@ public final class ScanAutoStart {
                 }
 
                 if (plannedFile.exists() && plannedFile.length() > 0) {
-                    gate.ensureScanned(displayName, plannedFile, message);
+                    if (known != null && known.unchecked) {
+                        // The bytes have arrived for a file we had marked
+                        // "not checked". This transition must be forced, not
+                        // requested: ensureScanned() is guarded by a
+                        // process-wide set of paths it has already looked at,
+                        // and that set does not care that the earlier attempt
+                        // happened when there was no file on disk. So the file
+                        // downloaded, the guard said "already handled", and the
+                        // bubble sat on "not checked yet" forever -- the exact
+                        // thing the amber marker was supposed to prevent.
+                        gate.rescan(displayName, plannedFile, message);
+                    } else {
+                        gate.ensureScanned(displayName, plannedFile, message);
+                    }
                     return;
+                }
+
+                // Nothing on disk. Mark an installer NOW, before deciding
+                // whether we are allowed to fetch it.
+                //
+                // This is the case the product exists for and the one it was
+                // getting wrong: an APK arrives, nothing is downloaded, so
+                // nothing was said -- and an unmarked bubble reads as "checked,
+                // fine". The user installs it. Whatever the network policy, the
+                // fact that this file can install an app is known from its name
+                // alone and costs nothing to say.
+                if (isInstaller(displayName, message)) {
+                    gate.markUnchecked(plannedFile, message);
                 }
 
                 // The download, unlike the name check, spends the user's money.
@@ -213,6 +248,30 @@ public final class ScanAutoStart {
             ScanGate.getInstance(account).forgetPreview(plannedFile);
         } catch (Throwable ignored) {
         }
+    }
+
+    /**
+     * Can this file install an app, judged from the name and declared type?
+     *
+     * <p>Deliberately crude and deliberately offline. It runs before a byte is
+     * fetched, so there is nothing to inspect but the name and the MIME type
+     * the sender declared -- and both are attacker-controlled. That is fine
+     * here: a false positive costs an amber marker on a harmless file, and the
+     * miss it is guarding against costs the user their bank account.
+     *
+     * <p>Split APK bundles count. They are how a real installer is delivered
+     * when the app is large, and they install exactly the same way.
+     */
+    private static boolean isInstaller(String fileName, MessageObject message) {
+        String name = fileName == null ? "" : fileName.toLowerCase();
+        if (name.endsWith(".apk") || name.endsWith(".apks")
+                || name.endsWith(".xapk") || name.endsWith(".apkm")) {
+            return true;
+        }
+        TLRPC.Document document = message == null ? null : message.getDocument();
+        String mime = document == null || document.mime_type == null
+                ? "" : document.mime_type.toLowerCase();
+        return mime.contains("android.package-archive");
     }
 
     private static String name(MessageObject message, TLRPC.Document document) {

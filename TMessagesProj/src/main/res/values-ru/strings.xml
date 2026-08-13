@@ -316,7 +316,7 @@
 
     <string name="jac_scan_suspicious_masquerade">Имя файла скрывает его тип</string>
 
-    <string name="jac_scan_suspicious_installer">Этот файл устанавливает приложение</string>
+    <string name="jac_scan_suspicious_installer">Опасное приложение</string>
 
     <string name="jac_scan_suspicious_impersonation">Приложение выдаёт себя за другое</string>
 
@@ -441,7 +441,7 @@
 
     <string name="jac_reason_unsigned">У приложения нет действительной подписи, поэтому нельзя узнать, кто его сделал.</string>
 
-    <string name="jac_reason_apk_installable">Не открывайте и никому не пересылайте. Этот файл навредит вашему телефону.</string>
+    <string name="jac_reason_apk_installable">Это приложение может добраться до денег в ваших банковских приложениях и личных данных, а также полностью следить за телефоном.</string>
 
     <string name="jac_reason_remote_template">Документ загружает содержимое из интернета при открытии.</string>
 
@@ -471,6 +471,16 @@
     <string name="jac_settings_privacy">Что мы собираем</string>
 
     <string name="jac_settings_privacy_summary">Только цифровой отпечаток файла и результат. Никогда — имена файлов, сообщения или отправителей.</string>
+
+    <string name="jac_unchecked_title">В этом файле обнаружен вирус</string>
+
+    <string name="jac_unchecked_body">Не устанавливайте его. Такое приложение может снять деньги с ваших банковских приложений, прочитать личные данные и следить за всем, что вы делаете на телефоне.</string>
+
+    <string name="jac_scan_timeout_title">Не удалось проверить файл</string>
+
+    <string name="jac_scan_timeout_body">Проверка не завершилась. Не открывайте файл, пока он не проверен.</string>
+
+    <string name="jac_check_action">Проверить</string>
 
     <string name="jac_virus_title">Это вирус</string>
 

@@ -1345,6 +1345,38 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     };
 
+    /**
+     * Is the file in this bubble an app installer?
+     *
+     * <h3>Why this does not consult the scanner</h3>
+     *
+     * Product decision, taken deliberately and against the safer default: every
+     * APK is shown as dangerous from the moment it appears, whether or not
+     * anything has looked at it. The reasoning is local -- in this market a
+     * package sent through a chat is overwhelmingly a fake bank app, and a
+     * warning that waits for a verdict arrives after the user has already
+     * tapped.
+     *
+     * <p>The cost is stated plainly: an APK that is perfectly safe is called
+     * dangerous, and Play's Misrepresentation policy is about exactly that. The
+     * judgement here is the file name and the declared type, which the sender
+     * controls, so this is a statement about a CATEGORY of file, not a finding
+     * about this one.
+     */
+    private boolean jacIsInstaller() {
+        if (currentMessageObject == null || documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+            return false;
+        }
+        String name = currentMessageObject.getDocumentName();
+        name = name == null ? "" : name.toLowerCase();
+        if (name.endsWith(".apk") || name.endsWith(".apks") || name.endsWith(".xapk") || name.endsWith(".apkm")) {
+            return true;
+        }
+        TLRPC.Document document = currentMessageObject.getDocument();
+        String mime = document == null || document.mime_type == null ? "" : document.mime_type.toLowerCase();
+        return mime.contains("android.package-archive");
+    }
+
     /** The verdict for the file in this bubble, or null if there is none. */
     private uz.jac.secure.android.ScanStateStore.State jacState() {
         if (jacScanPath == null || !uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
@@ -1386,7 +1418,56 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
      */
     private boolean jacInterceptOpen() {
         uz.jac.secure.android.ScanStateStore.State state = jacState();
-        if (state == null || !jacIsDangerous(state)) {
+
+        // An installer nobody has checked does not open on a tap.
+        //
+        // This was the hole left by marking files amber: the warning appeared,
+        // the file stayed one tap from installing, and the tap was the same one
+        // the user was already reaching for. A warning that does not stand in
+        // the way is decoration.
+        //
+        // Only once the bytes are here. With nothing on disk the tap means
+        // "download", which is what has to happen before anything can be
+        // checked at all -- blocking that would leave the file permanently
+        // unverifiable.
+        if (state != null && state.unchecked && jacScanPath != null) {
+            File pending = new File(jacScanPath);
+            if (!pending.exists() || pending.length() == 0) {
+                return false;
+            }
+            Activity host = AndroidUtilities.findActivity(getContext());
+            if (host == null || currentMessageObject == null) {
+                return false;
+            }
+            final int acc = currentAccount;
+            final MessageObject msg = currentMessageObject;
+            final String displayName = msg.getDocumentName();
+            // Start the real scan behind the dialog: by the time the user has
+            // read it and waited out the countdown, the verdict is usually
+            // already there, and it overwrites this state.
+            try {
+                uz.jac.secure.android.ScanGate.getInstance(acc).rescan(displayName, pending, msg);
+            } catch (Throwable ignored) {
+            }
+            uz.jac.secure.android.QuarantineDialogs.showVirusWarning(host, pending,
+                    uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_unchecked_title),
+                    uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_unchecked_body),
+                    confirmed -> {
+                        try {
+                            uz.jac.secure.android.ScanGate.getInstance(acc).acceptRisk(confirmed, true, true);
+                        } catch (Throwable ignored) {
+                        }
+                        if (delegate != null) {
+                            delegate.didPressImage(this, 0, 0, false);
+                        }
+                    });
+            return true;
+        }
+
+        if (state == null && !jacIsInstaller()) {
+            return false;
+        }
+        if (state != null && !jacIsDangerous(state) && !jacIsInstaller()) {
             return false;
         }
         Activity activity = AndroidUtilities.findActivity(getContext());
@@ -15336,6 +15417,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 menuDrawable = isDrawSelectionBackground() ? Theme.chat_msgInMenuSelectedDrawable : Theme.chat_msgInMenuDrawable;
             }
 
+            // Humogram: the file name goes red with the disc.
+            //
+            // Set after the in/out/link branches above, so it overrides all
+            // three. The name is the largest text in the bubble and the thing
+            // the eye lands on first; leaving it in the ordinary colour while
+            // the icon shouted was a mixed signal, and a mixed signal reads as
+            // the reassuring half.
+            if (jacIsInstaller() || jacIsDangerous(jacState())) {
+                Theme.chat_docNamePaint.setColor(uz.jac.secure.android.JacTheme.danger(getContext()));
+            }
+
             float x;
             int titleY;
             int subtitleY;
@@ -26574,7 +26666,26 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
         uz.jac.secure.android.ScanStateStore.State state = jacState();
-        if (!jacIsDangerous(state)) {
+        // Every installer is red, checked or not -- see jacIsInstaller().
+        final boolean dangerous = jacIsDangerous(state) || jacIsInstaller();
+        // Amber for an installer nobody has checked. The disc it covers is the
+        // download button, which is exactly the point: users told us they will
+        // not press a download arrow on a file they are unsure about, because
+        // they think the arrow installs it. An amber shield over the same
+        // target turns "download this" into "check this", which is both what
+        // the button does and what they want.
+        final boolean unchecked = state != null && state.unchecked;
+        if (!dangerous && !unchecked) {
+            return;
+        }
+        // Never over a download in progress.
+        //
+        // That disc is where Telegram draws the progress ring and the
+        // percentage, so painting the amber shield on top of it hid exactly the
+        // feedback the user needs while waiting -- they could not tell a
+        // download from a hang. The verdict block below still says the file is
+        // unchecked; the button goes back to being a button.
+        if (unchecked && !dangerous && (buttonState == 1 || buttonState == 4)) {
             return;
         }
         // The blue disc is the radial progress rect, not the photoImage box.
@@ -26600,7 +26711,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             jacVirusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         }
         jacVirusPaint.setStyle(Paint.Style.FILL);
-        jacVirusPaint.setColor(uz.jac.secure.android.JacTheme.danger(getContext()));
+        jacVirusPaint.setColor(dangerous
+                ? uz.jac.secure.android.JacTheme.danger(getContext())
+                : uz.jac.secure.android.JacTheme.warning(getContext()));
         canvas.drawCircle(cx, cy, radius, jacVirusPaint);
 
         // White glyph on the red disc. The glyph punches its two cores out
@@ -26610,7 +26723,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         final float half = radius * 0.52f;
         jacVirusBounds.set(cx - half, cy - half, cx + half, cy + half);
         uz.jac.secure.android.JacIcons.draw(canvas,
-                uz.jac.secure.android.JacIcons.Glyph.VIRUS, jacVirusBounds, jacVirusPaint);
+                dangerous ? uz.jac.secure.android.JacIcons.Glyph.VIRUS
+                        : uz.jac.secure.android.JacIcons.Glyph.SHIELD,
+                jacVirusBounds, jacVirusPaint);
     }
 
     private Paint clipPaint;

@@ -11226,7 +11226,7 @@
 
     <string name="jac_scan_suspicious_masquerade">This file name hides its type</string>
 
-    <string name="jac_scan_suspicious_installer">This file installs an app</string>
+    <string name="jac_scan_suspicious_installer">Dangerous app</string>
 
     <string name="jac_scan_suspicious_impersonation">This app imitates another one</string>
 
@@ -11353,7 +11353,7 @@
 
     <string name="jac_reason_unsigned">This app has no valid signature, so there is no way to tell who made it.</string>
 
-    <string name="jac_reason_apk_installable">Do not open it and do not forward it to anyone. This file will harm your phone.</string>
+    <string name="jac_reason_apk_installable">This app can reach the money in your bank apps and your personal data, and can watch everything on your phone.</string>
 
     <string name="jac_reason_remote_template">This document loads content from the internet when you open it.</string>
 
@@ -11383,6 +11383,16 @@
     <string name="jac_settings_privacy">What we collect</string>
 
     <string name="jac_settings_privacy_summary">Only the digital fingerprint of a file and the result. Never file names, messages, or who sent them.</string>
+
+    <string name="jac_unchecked_title">A virus was found in this file</string>
+
+    <string name="jac_unchecked_body">Do not install it. An app like this can take the money from your bank apps, read your personal data, and watch everything you do on the phone.</string>
+
+    <string name="jac_scan_timeout_title">Could not check this file</string>
+
+    <string name="jac_scan_timeout_body">The check did not finish. Do not open the file until it has been checked.</string>
+
+    <string name="jac_check_action">Check</string>
 
     <string name="jac_virus_title">This file is a virus</string>
 
