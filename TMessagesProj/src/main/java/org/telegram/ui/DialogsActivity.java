@@ -788,8 +788,62 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         private Paint actionBarSearchPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+        /**
+         * Humogram: the Uzbek lattice, banded along the top and bottom edges.
+         *
+         * Held per view rather than statically, so its cached shaders die with
+         * the screen instead of pinning a bitmap for the life of the process.
+         * One instance serves both bands; it keeps a built paint per direction.
+         */
+        private final uz.jac.secure.android.HumoOrnament humoOrnament =
+                new uz.jac.secure.android.HumoOrnament();
+
         public ContentView(Context context) {
             super(context);
+        }
+
+        /**
+         * Humogram: the bottom band of ornament, over the page colour and under
+         * everything else.
+         *
+         * This view's own background is the flat page fill, installed by
+         * ViewPagerActivity when the fragment is bound and kept current by the
+         * ThemeDescription further down this file. View.draw() paints that
+         * first, then calls this, then dispatchDraw() runs the children — so
+         * onDraw is exactly the slot a background Drawable would have occupied,
+         * with the difference that nothing can take it away.
+         *
+         * That difference is the whole reason it is done here. Installing the
+         * tile as fragmentView's background looks equivalent and is not: the
+         * ThemeDescription registered against this view with FLAG_BACKGROUND
+         * resolves to View.setBackgroundColor, which replaces any Drawable with
+         * a fresh ColorDrawable. It fires once per frame while a theme change
+         * animates, so the ornament would survive launch, disappear the first
+         * time the user toggled night mode, and never come back — the activity
+         * captures uiMode in its configChanges, so nothing recreates the view.
+         *
+         * The list itself cannot host it either: drawChild clips every ViewPage
+         * to below the action bar, and the pages translate sideways on folder
+         * swipes, so a backdrop drawn there would both stop at the toolbar and
+         * slide out from under the content.
+         *
+         * Only the bottom band belongs in this slot. The top one has to be drawn
+         * later, in dispatchDraw, because the action bar's own fill is painted
+         * there and would bury anything laid down here — see the call site.
+         *
+         * The band is dimmed away as search opens: the search page draws its own
+         * background over this one, and an ornament showing through the join is
+         * a seam rather than a border.
+         */
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            final int bandHeight = dp(uz.jac.secure.android.HumoOrnament.BOTTOM_BAND_DP);
+            humoOrnament.drawBand(canvas, getContext(), getWidth(),
+                    getHeight() - bandHeight, bandHeight,
+                    uz.jac.secure.android.HumoOrnament.FADE_UP,
+                    getThemedColor(Theme.key_windowBackgroundWhite),
+                    1f - Utilities.clamp(searchAnimationProgress, 1f, 0f));
         }
 
         private int startedTrackingPointerId;
@@ -1042,6 +1096,27 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     drawBlurRect(canvas, 0, blurBounds, actionBarDefaultPaint, true);
                 }
             }
+
+            // Humogram: the top band of ornament.
+            //
+            // Its twin is drawn in onDraw, but this one cannot be: every branch
+            // above fills the action bar strip with the page colour — opaque, and
+            // blurred when the theme asks for it — so an ornament painted in the
+            // background slot would be covered over exactly where it is meant to
+            // be strongest. Drawing it here puts it on top of that fill and still
+            // underneath every child, which is what a backdrop is.
+            //
+            // It hangs from `top` rather than from the top of the window so that
+            // it travels with the bar as the bar collapses on scroll, and it is
+            // dimmed away for search (the search page paints over this one) and
+            // for selection mode (the action-mode bar is its own surface, and a
+            // pattern behind it reads as a rendering fault).
+            humoOrnament.drawBand(canvas, getContext(), getMeasuredWidth(),
+                    top, dp(uz.jac.secure.android.HumoOrnament.TOP_BAND_DP),
+                    uz.jac.secure.android.HumoOrnament.FADE_DOWN,
+                    getThemedColor(Theme.key_windowBackgroundWhite),
+                    (1f - Utilities.clamp(searchAnimationProgress, 1f, 0f)) * (1f - progressToActionMode));
+
             tabsYOffset = 0;
             storiesYOffset = 0;
             tabsYOffset -= Math.min(
@@ -3190,9 +3265,36 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return actionBar;
     }
 
+    /**
+     * Humogram: put the Humo back on a title view, whichever one is current.
+     *
+     * Called from createView for the first one and from setTitleOverlayText for
+     * every one after it. That second caller is not defensive: ActionBar swaps
+     * the visible title view for a freshly built one whenever an overlay title
+     * goes up or comes down — connection state does this, so "Connecting…" alone
+     * was enough to take the bird off the bar for the rest of the session — and
+     * the new view arrives with no left drawable and the default 4dp padding.
+     *
+     * Sharing one Drawable across both title views is safe: SimpleTextView sets
+     * the bounds it wants inside its own draw pass, every frame, and only one of
+     * the two is ever visible.
+     */
+    private void applyHumoTitleMark(SimpleTextView titleTextView) {
+        if (titleTextView == null || logoDrawable == null || !hasMainTabs) {
+            return;
+        }
+        titleTextView.setDrawablePadding(dp(8));
+        titleTextView.setLeftDrawable(logoDrawable);
+        titleTextView.setSideDrawablesColor(getThemedColor(Theme.key_telegram_color_dialogsLogo));
+    }
+
     @Override
     public void setTitleOverlayText(String title, int titleId, Runnable action) {
         super.setTitleOverlayText(title, titleId, action);
+        if (actionBar != null) {
+            applyHumoTitleMark(actionBar.getTitleTextView());
+            applyHumoTitleMark(actionBar.getTitleTextView2());
+        }
         if (actionBar != null && selectAnimatedEmojiDialog != null && selectAnimatedEmojiDialog.getContentView() instanceof SelectAnimatedEmojiDialog) {
             SimpleTextView textView = actionBar.getTitleTextView();
             ((SelectAnimatedEmojiDialog) selectAnimatedEmojiDialog.getContentView()).setScrimDrawable(textView != null && textView.getRightDrawable() == statusDrawable ? statusDrawable : null, textView);
@@ -5360,6 +5462,36 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (hasMainTabs) {
             actionBar.getTitlesContainer().setTranslationX(dp(4));
             actionBar.setTitleColor(getThemedColor(Theme.key_telegram_color_dialogsLogo));
+
+            // Humogram: the Humo, to the left of the app name.
+            //
+            // This is the second of the two ways the brand reaches the top of
+            // the chat list, and it is the one that shows when there are no
+            // stories. The other is DialogStoriesCell's telegramLogoView, which
+            // draws mark and wordmark as a single lockup image; the two are
+            // alternatives, faded against each other by that cell's collapse
+            // progress, so both carrying the bird is what keeps the header from
+            // gaining and losing it as the list scrolls.
+            //
+            // Left drawable rather than an ImageSpan on the title: setTitle's
+            // only drawable slot is the RIGHT one and it is already spent on the
+            // emoji status, while SimpleTextView measures and lays out a left
+            // drawable off its intrinsic size and centres it on the text — which
+            // is why HumoMark hands back a drawable already claiming the size it
+            // wants rather than relying on bounds.
+            //
+            // The tint is not optional. The artwork is a white silhouette and
+            // setSideDrawablesColor multiplies, so an untinted mark is a white
+            // bird on a white bar. It is given the same colour as the title on
+            // the line above, so the two can never disagree.
+            //
+            // The mark is kept in a field because it outlives the title view it
+            // is attached to — see applyHumoTitleMark — and because the theme
+            // delegate further down this file re-tints it from there.
+            if (logoDrawable == null) {
+                logoDrawable = uz.jac.secure.android.HumoMark.forHeight(context, 19);
+            }
+            applyHumoTitleMark(actionBar.getTitleTextView());
         }
 
         if (folderId != 0 || communityId != 0) {
@@ -6021,6 +6153,26 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             dialogsHintCell.setText(Emoji.replaceWithRestrictedEmoji(getString(R.string.PasskeyPopupTitle), dialogsHintCell.titleView, this::updateDialogsHint), getString(R.string.PasskeyPopupText));
             dialogsHintCell.setOnCloseListener(v -> {
                 MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
+                updateDialogsHint();
+            });
+        } else if (folderId == 0 && communityId == 0 && uz.jac.secure.android.HumogramConfig.shouldShowChannelHint(getContext())) {
+            // Humogram: recommend a third-party cyber-awareness channel, pinned
+            // at the top of the chat list until the user opens or dismisses it.
+            // Ranked below the account-critical hints (frozen account, passkey)
+            // but above the promotional ones (premium, birthday), so it is
+            // reliably visible without ever hiding something that matters more.
+            dialogsHintCellVisible = true;
+            final String channel = "@" + uz.jac.secure.android.HumogramConfig.SECURITY_CHANNEL;
+            dialogsHintCell.setOnClickListener(v -> {
+                uz.jac.secure.android.HumogramConfig.setChannelHintDismissed(getContext());
+                Browser.openUrl(getContext(), "https://t.me/" + uz.jac.secure.android.HumogramConfig.SECURITY_CHANNEL);
+                AndroidUtilities.runOnUIThread(this::updateDialogsHint, 250);
+            });
+            dialogsHintCell.setText(
+                uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_channel_hint_title),
+                uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_channel_hint_text, channel));
+            dialogsHintCell.setOnCloseListener(v -> {
+                uz.jac.secure.android.HumogramConfig.setChannelHintDismissed(getContext());
                 updateDialogsHint();
             });
         } else if (folderId == 0 && communityId == 0 && getMessagesController().pendingSuggestions.contains("PREMIUM_GRACE")) {
@@ -7031,6 +7183,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
+        // Humogram: at most once a month, and only when a quick local scan
+        // actually finds something, suggest the device security checkup. Only
+        // from the chat list proper — this class is also the forward picker,
+        // the share-target picker and the archive, and a security nudge in the
+        // middle of someone's share is an interruption, not a service.
+        if (!onlySelect && folderId == 0) {
+            uz.jac.secure.android.SecurityCheckup.maybeRemind(this);
+        }
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }

@@ -82,7 +82,6 @@ public class DataSettingsActivity extends BaseFragment {
     // its policy belongs beside the auto-download presets, not on a screen of
     // its own where nobody would connect the two.
     private int jacScanSectionRow;
-    private int jacScanAutoCheckRow;
     private int jacScanInfoRow;
     private int usageSectionRow;
     private int storageUsageRow;
@@ -179,11 +178,9 @@ public class DataSettingsActivity extends BaseFragment {
         // a promise the app cannot keep.
         if (uz.jac.secure.android.ScannerBootstrap.isInstalled()) {
             jacScanSectionRow = rowCount++;
-            jacScanAutoCheckRow = rowCount++;
             jacScanInfoRow = rowCount++;
         } else {
             jacScanSectionRow = -1;
-            jacScanAutoCheckRow = -1;
             jacScanInfoRow = -1;
         }
 
@@ -569,30 +566,6 @@ public class DataSettingsActivity extends BaseFragment {
                 showDialog(builder.create());
             } else if (position == proxyRow) {
                 presentFragment(new ProxyListActivity());
-            } else if (position == jacScanAutoCheckRow) {
-                if (getParentActivity() == null) {
-                    return;
-                }
-                final Context ctx = getParentActivity();
-                showDialog(AlertsCreator.createSingleChoiceDialog(
-                        getParentActivity(),
-                        new String[]{
-                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_never),
-                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_wifi),
-                                uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck_always)
-                        },
-                        uz.jac.secure.android.JacStrings.get(ctx, R.string.jac_settings_autocheck),
-                        // The option order IS the constant order, so the index
-                        // the dialog reports is the value to store. Kept that
-                        // way deliberately: a lookup table here would be one
-                        // more thing to get out of step with ScanSettings.
-                        uz.jac.secure.android.ScanSettings.getAutoCheck(),
-                        (dialog, which) -> {
-                            uz.jac.secure.android.ScanSettings.setAutoCheck(which);
-                            if (listAdapter != null) {
-                                listAdapter.notifyItemChanged(jacScanAutoCheckRow);
-                            }
-                        }));
             } else if (position == enableStreamRow) {
                 SharedConfig.toggleStreamMedia();
                 TextCheckCell textCheckCell = (TextCheckCell) view;
@@ -769,11 +742,6 @@ public class DataSettingsActivity extends BaseFragment {
                     } else if (position == clearDraftsRow) {
                         textCell.setIcon(0);
                         textCell.setText(LocaleController.getString(R.string.PrivacyDeleteCloudDrafts), false);
-                    } else if (position == jacScanAutoCheckRow) {
-                        textCell.setIcon(0);
-                        textCell.setTextAndValue(
-                                uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_autocheck),
-                                jacAutoCheckValue(mContext), false);
                     }
                     break;
                 }
@@ -820,7 +788,7 @@ public class DataSettingsActivity extends BaseFragment {
                     if (position == enableAllStreamInfoRow) {
                         cell.setText(LocaleController.getString(R.string.EnableAllStreamingInfo));
                     } else if (position == jacScanInfoRow) {
-                        cell.setText(uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_autocheck_info));
+                        cell.setText(uz.jac.secure.android.JacStrings.get(mContext, R.string.jac_settings_scan_info));
                     }
                     break;
                 }
@@ -937,8 +905,7 @@ public class DataSettingsActivity extends BaseFragment {
         public boolean isRowEnabled(int position) {
             return position == mobileRow || position == roamingRow || position == wifiRow || position == storageUsageRow || position == useLessDataForCallsRow || position == dataUsageRow || position == proxyRow || position == clearDraftsRow ||
                     position == enableCacheStreamRow || position == enableStreamRow || position == enableAllStreamRow || position == enableMkvRow || position == quickRepliesRow || position == autoplayVideoRow || position == autoplayGifsRow ||
-                    position == storageNumRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow || position == resetDownloadRow ||
-                    position == jacScanAutoCheckRow;
+                    position == storageNumRow || position == saveToGalleryGroupsRow || position == saveToGalleryPeerRow || position == saveToGalleryChannelsRow || position == resetDownloadRow;
         }
 
         @Override
@@ -997,18 +964,6 @@ public class DataSettingsActivity extends BaseFragment {
         }
     }
 
-    /** SkySecure: the current auto-check policy, in the user's language. */
-    private static String jacAutoCheckValue(Context context) {
-        switch (uz.jac.secure.android.ScanSettings.getAutoCheck()) {
-            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_NEVER:
-                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_never);
-            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_ALWAYS:
-                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_always);
-            case uz.jac.secure.android.ScanSettings.AUTO_CHECK_WIFI:
-            default:
-                return uz.jac.secure.android.JacStrings.get(context, R.string.jac_settings_autocheck_wifi);
-        }
-    }
 
     @Override
     public ArrayList<ThemeDescription> getThemeDescriptions() {

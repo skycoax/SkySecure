@@ -3,7 +3,6 @@ package uz.jac.secure.android;
 import android.content.Context;
 import android.content.res.AssetManager;
 
-import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 
 import java.io.ByteArrayOutputStream;
@@ -50,18 +49,24 @@ public final class ScannerBootstrap {
                     asset(assets, "psl-subset.txt"),
                     asset(assets, "uz-brand-allowlist.json"));
 
-            String baseUrl = context.getString(R.string.jac_api_base_url);
-            String appVersion = versionOf(context);
-            BackendTokens tokens = new BackendTokens(context, baseUrl, appVersion);
+            // Local-only, by decision, not by accident. No base URL and no
+            // token source are handed to the factory, which makes the backend
+            // branch in EngineFactory unreachable: no device registration, no
+            // /v1/verdict lookup, no hash of any file ever leaving the phone.
+            // Every verdict below comes from the on-device analysers alone.
+            // The consequence is accepted product behaviour: the local policy
+            // never says CLEAN about an installer, so an APK stays red for
+            // good and installing one always takes the deliberate two-step
+            // override.
 
             // One gate per account. Telegram supports several signed-in
             // accounts at once, and a verdict cache shared between them would
             // leak the fact that a file was seen on one into the other.
             for (int account = 0; account < UserConfig.MAX_ACCOUNT_COUNT; account++) {
                 ScanGate.install(account, context, mode ->
-                        EngineFactory.engineFor(data, mode, baseUrl, tokens));
+                        EngineFactory.engineFor(data, mode));
                 LinkGate.install(account, mode ->
-                        EngineFactory.linkScannerFor(data, mode, baseUrl, tokens));
+                        EngineFactory.linkScannerFor(data, mode));
             }
 
             installed = true;
@@ -98,13 +103,4 @@ public final class ScannerBootstrap {
         }
     }
 
-    private static String versionOf(Context context) {
-        try {
-            String name = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0).versionName;
-            return name != null ? name : "unknown";
-        } catch (Throwable t) {
-            return "unknown";
-        }
-    }
 }

@@ -1021,15 +1021,13 @@ public class FileLoader extends BaseController {
                     loadOperationPathsUI.remove(fileName);
                     // JAC Secure interception point.
                     //
-                    // The bytes are on disk, but nothing in the UI may treat the file
-                    // as available until it has a verdict. ScanGate posts the scan to a
-                    // background executor and re-invokes this continuation when it
-                    // finishes; a MALICIOUS verdict moves the file into app-private
-                    // quarantine first, so the path handed back is the quarantined one
-                    // and no other component ever learns the original location.
-                    //
-                    // This is a delay, never a block: the continuation always runs, so
-                    // "Open anyway" remains reachable and Telegram ToS 1.3 is satisfied.
+                    // The continuation runs immediately, on this thread, exactly as the
+                    // unpatched delegate call would — the download's completion must
+                    // not wait on a verdict, or the progress ring spins for as long as
+                    // the scan takes. ScanGate then runs the scan on its own executor
+                    // and publishes the verdict through the state store; what actually
+                    // stands between the user and a bad file is the open gate, which
+                    // every path to the system installer runs through.
                     uz.jac.secure.android.ScanGate.getInstance(currentAccount).onFileLoaded(
                             fileName,
                             finalFile,
@@ -1053,17 +1051,6 @@ public class FileLoader extends BaseController {
                 checkDownloadQueue(operation, operation.getQueue());
                 if (delegate != null) {
                     delegate.fileDidFailedLoad(fileName, reason);
-                }
-
-                // JAC Secure: a download the scanner started on its own has
-                // failed. It published a provisional "scanning" state when it
-                // asked for the bytes, and nothing else will ever clear it — the
-                // bubble would show a spinner for a verdict that can no longer
-                // arrive. Ignored for every download the scanner did not start.
-                if (parentObject instanceof MessageObject) {
-                    uz.jac.secure.android.ScanAutoStart.onDownloadFailed(
-                            currentAccount,
-                            getPathToMessage(((MessageObject) parentObject).messageOwner, false));
                 }
 
                 if (document != null && parentObject instanceof MessageObject && reason == 0) {

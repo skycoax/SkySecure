@@ -1827,7 +1827,10 @@ public class AlertsCreator {
         builder.setTitle(LocaleController.getString(R.string.OpenUrlTitle));
 
         final TextView urlView = new TextView(context);
-        urlView.setText(url);
+        // Humogram: show the address that will actually be opened. Browser
+        // strips tracking parameters on the way out, so printing the raw one
+        // here would contradict the very screen the user is checking.
+        urlView.setText(uz.jac.secure.android.LinkHygiene.clean(context, url));
         urlView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         urlView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
         urlView.setGravity(Gravity.CENTER);

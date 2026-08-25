@@ -164,11 +164,10 @@ public final class ScanUi {
         if (state == null) {
             return null;
         }
-        // Not checked yet, and it installs an app. Amber, not red and not
-        // neutral: we are not claiming this file is malicious -- we know
-        // nothing about it -- but "nothing known about an installer" is the
-        // state in which people lose their bank accounts, and a blank bubble
-        // reads as approval.
+        // Not checked yet, and it installs an app. "Nothing known about an
+        // installer" is the state in which people lose their bank accounts,
+        // and a blank bubble reads as approval — so unknown renders exactly
+        // like dangerous until a scan says otherwise.
         if (state.unchecked) {
             // Red, not amber, and worded as a finding rather than a caution.
             // Product decision -- see ChatMessageCell#jacIsInstaller for what it
@@ -182,9 +181,17 @@ public final class ScanUi {
                     JacStrings.get(context, R.string.jac_unchecked_title));
         }
         if (state.scanning) {
+            // Danger red, not neutral. "Being checked" is not a verdict, and
+            // the rule this product runs on is that the absence of a verdict IS
+            // the dangerous condition: the file was suspect before the scan
+            // started and stays suspect until the scan says otherwise. A file
+            // that turned calm-grey the moment checking began would read as
+            // progress towards safety — reassurance the scanner has not earned
+            // yet. The spinner glyph still says work is happening; the colour
+            // says do not touch it meanwhile.
             return new Presentation(
                     JacIcons.Glyph.SPINNER,
-                    JacTheme.neutral(context),
+                    JacTheme.danger(context),
                     JacStrings.get(context, R.string.jac_scan_scanning),
                     null,
                     false,
@@ -250,9 +257,15 @@ public final class ScanUi {
                 // quarantining: ScanPolicy reserves that for the unambiguous,
                 // and a quarantine that fires on every APK teaches people to
                 // click past it, which is worse than not having it.
+                // Amber, not red. Red is reserved for what the scanner is sure
+                // about — a malicious file, or an installer nobody has checked
+                // yet — while SUSPICIOUS means "looks off, not proven bad". Two
+                // colours the user can tell apart at a glance are worth more
+                // than one loud one, and the distinction is exactly danger vs
+                // caution.
                 return new Presentation(
                         JacIcons.Glyph.WARNING,
-                        JacTheme.danger(context),
+                        JacTheme.warning(context),
                         suspiciousTitle(context, lead),
                         explanation,
                         false,

@@ -2741,6 +2741,12 @@ public class LocaleController {
     }
 
     public void recreateFormatters() {
+        // JAC Secure: the scanner resolves its strings against a Context pinned
+        // to the app language and caches it. This is the one method that runs
+        // on every language change, so it is where that cache must be dropped —
+        // otherwise verdicts and warnings keep speaking the previous language
+        // until the process restarts.
+        uz.jac.secure.android.JacStrings.invalidate();
         Locale locale = currentLocale;
         if (locale == null) {
             locale = Locale.getDefault();

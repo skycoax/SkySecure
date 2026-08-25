@@ -11384,19 +11384,20 @@
 
     <string name="jac_settings_privacy_summary">Only the digital fingerprint of a file and the result. Never file names, messages, or who sent them.</string>
 
-    <string name="jac_unchecked_title">A virus was found in this file</string>
+    <string name="jac_unchecked_title">Not checked — could be dangerous</string>
 
-    <string name="jac_unchecked_body">Do not install it. An app like this can take the money from your bank apps, read your personal data, and watch everything you do on the phone.</string>
+    <string name="jac_unchecked_body">Do not open it yet. Installer files like this are often used to empty your bank apps and steal the codes from your SMS. It is being checked.</string>
 
     <string name="jac_scan_timeout_title">Could not check this file</string>
 
     <string name="jac_scan_timeout_body">The check did not finish. Do not open the file until it has been checked.</string>
 
     <string name="jac_check_action">Check</string>
+    <string name="jac_scan_badge">Checking</string>
 
-    <string name="jac_virus_title">This file is a virus</string>
+    <string name="jac_virus_title">This is a virus</string>
 
-    <string name="jac_virus_body">It does not matter which one — it is a virus. If you install it, it can read your personal data, take money from your accounts, and get into your other apps, including Telegram.</string>
+    <string name="jac_virus_body">If you install it, it can steal your money, the codes from your SMS, and get into your other apps — including Telegram. Do not install it.</string>
 
     <string name="jac_virus_close">Close</string>
 
@@ -11411,5 +11412,58 @@
     <string name="jac_settings_autocheck_always">Always</string>
 
     <string name="jac_settings_autocheck_info">To check a file before you open it, it has to be downloaded first. File names are always checked, on any setting — that costs no data.</string>
+    <string name="jac_settings_scan_info">Files are checked only on your phone — nothing is ever sent to a server. Tap a file to download it, and the check runs before you can open it.</string>
 
+    <string name="jac_humogram_settings">Humogram</string>
+    <string name="jac_humogram_settings_info">Security, appearance and Uzbek style</string>
+    <string name="jac_ornament_header">Chat list ornament</string>
+    <string name="jac_ornament_suzani">Suzani border</string>
+    <string name="jac_ornament_geometry">Geometric stars</string>
+    <string name="jac_ornament_flag">Crescent and stars</string>
+    <string name="jac_ornament_off">None</string>
+    <string name="jac_ornament_note">The pattern is drawn faintly along the top and bottom of the chat list. It follows your theme and never covers your chats.</string>
+    <string name="jac_security_header">Security</string>
+    <string name="jac_checkup">Device check</string>
+    <string name="jac_checkup_results">Results</string>
+    <string name="jac_checkup_ok">OK</string>
+    <string name="jac_checkup_warn">Attention</string>
+    <string name="jac_checkup_risk">Risk</string>
+    <string name="jac_checkup_unknown">Couldn\'t check</string>
+    <string name="jac_checkup_screen_lock">Screen lock</string>
+    <string name="jac_checkup_screen_lock_advice">Without a screen lock, anyone who picks up the phone gets all your chats. Set a PIN, pattern or fingerprint in system settings.</string>
+    <string name="jac_checkup_root">Root access</string>
+    <string name="jac_checkup_root_advice">This device appears to be rooted. Root lets any app read other apps\' data, including your messages. If you didn\'t root it yourself, have the phone checked.</string>
+    <string name="jac_checkup_adb">USB debugging</string>
+    <string name="jac_checkup_adb_advice">USB debugging lets a computer control this phone over a cable. Handy for developers, risky for everyone else — turn it off unless you are using it right now.</string>
+    <string name="jac_checkup_patch">Security updates</string>
+    <string name="jac_checkup_patch_advice">The last security update on this phone is over a year old, so known vulnerabilities stay open. Check for a system update; if none comes, treat this device as less trusted.</string>
+    <string name="jac_checkup_2fa">Cloud password (2FA)</string>
+    <string name="jac_checkup_2fa_advice">A cloud password protects the account even if someone intercepts the login code from SMS. It is the single most important Telegram setting.</string>
+    <string name="jac_checkup_open_settings">Open settings</string>
+    <string name="jac_checkup_set_up">Set up</string>
+    <string name="jac_checkup_note">The device checks run here on your phone. Only the cloud password status is asked of Telegram, the same way Settings does; nothing is sent anywhere else.</string>
+    <string name="jac_checkup_remind">It\'s been a while since the last security check, and this device has something worth a look.</string>
+    <string name="jac_checkup_remind_open">Check</string>
+    <string name="jac_link_hygiene">Remove trackers from links</string>
+    <string name="jac_link_hygiene_info">Before a link opens, tracking tags (utm_*, fbclid, gclid and similar) are cut from it. The page loads the same; the advertiser learns less about you.</string>
+    <string name="jac_channel">Cyber-safety channel (recommended)</string>
+    <string name="jac_channel_hint_title">Stay safe from fraud</string>
+    <string name="jac_channel_hint_text">Cyber-awareness channel we recommend: %1$s</string>
+    <string name="jac_duress">Panic passcode</string>
+    <string name="jac_duress_on">On</string>
+    <string name="jac_duress_off">Off</string>
+    <string name="jac_duress_intro">A second passcode you can give up under pressure. Entering it erases everything this app stores on the phone and restarts it — accounts, chats, downloaded files — so what remains is a fresh, empty Telegram. Files you already saved to your gallery are not affected.\n\nFor this to fully protect you, also set a Two-Step Verification password: without it, someone holding your SIM could sign back in by SMS and read your cloud history.</string>
+    <string name="jac_duress_cleared">Panic passcode removed: it now matches your app passcode. Set a new, different one.</string>
+    <string name="jac_duress_need_passcode">Set an app passcode first</string>
+    <string name="jac_duress_need_passcode_info">A panic passcode only works when the app has a lock to demand a code. Set an app passcode, then come back here.</string>
+    <string name="jac_duress_set">Set panic passcode</string>
+    <string name="jac_duress_change">Change panic passcode</string>
+    <string name="jac_duress_remove">Remove panic passcode</string>
+    <string name="jac_duress_enter">Panic passcode</string>
+    <string name="jac_duress_confirm">Repeat it</string>
+    <string name="jac_duress_save">Save</string>
+    <string name="jac_duress_same_as_real">This is your real passcode. The panic passcode must be different, or your normal unlock would wipe the app.</string>
+    <string name="jac_duress_action_info">When entered, all data this app keeps on the phone is erased and the app restarts empty. A logout is also sent to the server when there is a connection. This cannot be undone, so choose a code you will not enter by mistake.</string>
+    <string name="jac_creator">Creator</string>
+    <string name="jac_made_by">Made by %1$s</string>
 </resources>

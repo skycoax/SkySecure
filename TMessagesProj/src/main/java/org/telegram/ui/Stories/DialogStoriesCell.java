@@ -159,6 +159,13 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
     AnimatedTextView titleView;
     ActionBarAnimatedSubtitleOverlayContainer subtitleOverlayContainer;
     ImageView telegramLogoView;
+
+    /** Humogram: the bird kept beside the title text. Null on the archive cell. */
+    ImageView humoMarkView;
+
+    /** Humogram: mark box, and the ink-to-ink gap between it and the title. */
+    private static final int HUMO_MARK_SIZE_DP = 22;
+    private static final int HUMO_MARK_GAP_DP = 8;
     ImageView emojiStatusView;
     AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
     boolean drawCircleForce;
@@ -335,13 +342,54 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         telegramLogoView = new ImageView(context);
         telegramLogoView.setContentDescription(context.getResources().getString(R.string.app_name));
         telegramLogoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        // Humogram: our own wordmark. Same 90x22dp footprint as the artwork it
-        // replaces, so the layout and the colour filter below are untouched.
-        telegramLogoView.setImageResource(R.drawable.humogram_wordmark);
+        // Humogram: the Humo mark and our wordmark, as one lockup.
+        //
+        // One image rather than a second ImageView beside this one. The colour
+        // below is applied with PorterDuff.MULTIPLY over white artwork, which is
+        // why the wordmark has always been a white silhouette: multiplying white
+        // by the host's colour yields the host's colour exactly. A separate bird
+        // view would need that same filter kept in sync by hand, and the pair
+        // would drift apart the first time somebody retinted one of them.
+        //
+        // 113x22dp, not 90x22: the mark adds 21.8dp of its own plus an 8dp gap
+        // measured ink-to-ink. The gap looks smaller than 8 written down because
+        // the wordmark art carries a 6.5dp left bearing inside its own canvas.
+        // Nothing else needs adjusting for the new width — the emoji status is
+        // positioned off telegramLogoView.getMeasuredWidth() further down, so it
+        // follows the wider mark on its own.
+        telegramLogoView.setImageResource(R.drawable.humogram_lockup);
         telegramLogoView.setColorFilter(getTextLogoColor(), PorterDuff.Mode.MULTIPLY);
         telegramLogoView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         telegramLogoView.setFocusableInTouchMode(true);
-        addView(telegramLogoView, LayoutHelper.createFrame(90, 22));
+        addView(telegramLogoView, LayoutHelper.createFrame(113, 22));
+
+        // Humogram: the Humo alone, for whenever the lockup above is not shown.
+        //
+        // The header has exactly two states and upstream cross-fades between
+        // them: the lockup when there is nothing to say, and a line of text when
+        // there is — "3 stories", "Uploading…", and every connection state, which
+        // is the common one. In stock Telegram that means the wordmark vanishes
+        // for as long as the app is reconnecting, which was fine when the brand
+        // was Telegram's and is not fine now: on a slow network the header would
+        // spend most of its life unbranded.
+        //
+        // So the mark stays and only the words are traded. It rides the title's
+        // alpha rather than the lockup's — the two are exact opposites — so at
+        // any moment the user sees the bird with the wordmark, or the bird with
+        // the message, and never a header without it.
+        //
+        // Square 22dp frame with CENTER_INSIDE, which reproduces the bird's
+        // placement inside the lockup exactly: the art is 1.143 wide to tall, so
+        // it fits to 22 x 19.25 and centres with the same 1.5dp of air above and
+        // below that the lockup canvas gives it.
+        if (type != TYPE_ARCHIVE) {
+            humoMarkView = new ImageView(context);
+            humoMarkView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            humoMarkView.setImageResource(R.drawable.humo_bird);
+            humoMarkView.setColorFilter(getTextLogoColor(), PorterDuff.Mode.MULTIPLY);
+            humoMarkView.setContentDescription(context.getResources().getString(R.string.app_name));
+            addView(humoMarkView, LayoutHelper.createFrame(HUMO_MARK_SIZE_DP, HUMO_MARK_SIZE_DP));
+        }
 
         statusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(null, dp(26));
         statusDrawable.center = true;
@@ -940,13 +988,25 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             titleView.setTranslationY(bottomY + dp(14) - offset + dp(FAKE_TOP_PADDING) - dp(6) * subtitleOverlayContainer.getTotalVisibility());
             int cellWidth = dp(72);
             lastViewRight += -cellWidth + getAvatarRight(cellWidth, collapsedProgress) + dp(12);
-            titleView.setTranslationX(lastViewRight);
-            titleView.getDrawable().setRightPadding(lastViewRight - dp(12) + actionBar.menu.getVisibleItemsMeasuredWidthWithAlpha() * progress);
+            // Humogram: the title starts clear of the mark, which sits where the
+            // lockup's own bird sits, so the two states swap without the text
+            // moving. The right padding shifts with it, or the text would keep
+            // its old ellipsis point and run the extra distance under the menu.
+            final float humoMarkOffset = humoMarkView != null ? dp(HUMO_MARK_SIZE_DP + HUMO_MARK_GAP_DP) : 0;
+            titleView.setTranslationX(lastViewRight + humoMarkOffset);
+            titleView.getDrawable().setRightPadding(lastViewRight + humoMarkOffset - dp(12) + actionBar.menu.getVisibleItemsMeasuredWidthWithAlpha() * progress);
 
-            telegramLogoView.setTranslationX(titleView.getTranslationX() + dp(1));
+            telegramLogoView.setTranslationX(lastViewRight + dp(1));
             telegramLogoView.setTranslationY(bottomY + dp(14 + FAKE_TOP_PADDING + 4.333f) + translationOffset /*titleView.getTranslationY() + dpf2(37.33f)*/);
 
-            emojiStatusView.setTranslationX(titleView.getTranslationX() - dpf2(3.33f) + telegramLogoView.getMeasuredWidth());
+            if (humoMarkView != null) {
+                humoMarkView.setTranslationX(telegramLogoView.getTranslationX());
+                humoMarkView.setTranslationY(telegramLogoView.getTranslationY());
+            }
+
+            // Off the lockup, not off the title: the title now carries the mark's
+            // offset and the status belongs to the end of the lockup, as before.
+            emojiStatusView.setTranslationX(lastViewRight - dpf2(3.33f) + telegramLogoView.getMeasuredWidth());
             emojiStatusView.setTranslationY(bottomY + dp(14 - 11 + FAKE_TOP_PADDING + 4.333f) + translationOffset);
 
             subtitleOverlayContainer.setTranslationX(titleView.getTranslationX());
@@ -1159,6 +1219,9 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             subtitleOverlayContainer.updateColors();
         }
         telegramLogoView.setColorFilter(getTextLogoColor(), PorterDuff.Mode.MULTIPLY);
+        if (humoMarkView != null) {
+            humoMarkView.setColorFilter(getTextLogoColor(), PorterDuff.Mode.MULTIPLY);
+        }
         AndroidUtilities.forEachViews(recyclerListView, view -> {
             StoryCell cell = (StoryCell) view;
             cell.invalidate();
@@ -2221,6 +2284,12 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         if (telegramLogoView != null) {
             telegramLogoView.setAlpha(logoAlpha);
             telegramLogoView.setVisibility(logoAlpha > 0 ? VISIBLE : GONE);
+        }
+        // Humogram: the mark takes the title's side of the cross-fade, so the
+        // bird is on screen in both states rather than only in the lockup one.
+        if (humoMarkView != null) {
+            humoMarkView.setAlpha(titleAlpha);
+            humoMarkView.setVisibility(titleAlpha > 0 ? VISIBLE : GONE);
         }
         if (emojiStatusView != null) {
             emojiStatusView.setAlpha(logoAlpha);

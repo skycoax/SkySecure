@@ -831,7 +831,12 @@ public class ThemeColors {
         defaultColors[key_botKeyboard_button_primary] = TELEGRAM_COLOR;
         defaultColors[key_botKeyboard_button_success] = 0xFF40b135;
 
-        defaultColors[key_telegram_color_dialogsLogo] = 0xFF168bdb;
+        // Humogram: the chat list header wears Samarkand turquoise, not Telegram
+        // blue. It carries the app name, the Humo beside it and the stories-row
+        // lockup, so it is the one colour the brand is actually read from. This
+        // is the default only — a theme that names the key still wins, and any
+        // theme that does not name it falls back to the plain text colour.
+        defaultColors[key_telegram_color_dialogsLogo] = 0xFF1791A8;
         defaultColors[key_telegram_color] = TELEGRAM_COLOR;
         defaultColors[key_telegram_color_text] = TELEGRAM_COLOR_TEXT;
 

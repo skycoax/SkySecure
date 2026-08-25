@@ -124,19 +124,20 @@
     <string name="jac_settings_privacy">Biz nimani yig\'amiz</string>
     <string name="jac_settings_privacy_summary">Faqat faylning raqamli izi va natija. Hech qachon fayl nomlari, xabarlar yoki kim yuborgani emas.</string>
 
-    <string name="jac_unchecked_title">Bu faylda virus aniqlandi</string>
+    <string name="jac_unchecked_title">Tekshirilmagan — xavfli bo‘lishi mumkin</string>
 
-    <string name="jac_unchecked_body">Uni o‘rnatmang. Bunday ilova bankdagi pullaringizni yechib olishi, shaxsiy ma’lumotlaringizni o‘qishi va telefoningizda qilayotgan hamma ishingizni kuzatishi mumkin.</string>
+    <string name="jac_unchecked_body">Hozircha ochmang. Bunday o‘rnatish fayllari ko‘pincha bank ilovalaridan pul va SMS kodlarini o‘g‘irlaydi. Tekshirilmoqda.</string>
 
     <string name="jac_scan_timeout_title">Faylni tekshirib bo‘lmadi</string>
 
     <string name="jac_scan_timeout_body">Tekshiruv yakunlanmadi. Fayl tekshirilmaguncha uni ochmang.</string>
 
     <string name="jac_check_action">Tekshirish</string>
+    <string name="jac_scan_badge">Tekshiruv</string>
 
     <string name="jac_virus_title">Bu — virus</string>
 
-    <string name="jac_virus_body">Qaysi biri ekani muhim emas — bu virus. Uni o‘rnatsangiz, u shaxsiy ma’lumotlaringizni olishi, hisobingizdan pul yechib olishi va boshqa ilovalarga, jumladan Telegramga ham kirishi mumkin.</string>
+    <string name="jac_virus_body">O‘rnatsangiz — pulingizni, SMS kodlaringizni va boshqa ilovalaringizga, jumladan Telegramga kirishni o‘g‘irlaydi. O‘rnatmang.</string>
 
     <string name="jac_virus_close">Yopish</string>
 
@@ -151,5 +152,58 @@
     <string name="jac_settings_autocheck_always">Doimo</string>
 
     <string name="jac_settings_autocheck_info">Faylni ochishdan oldin tekshirish uchun uni avval yuklab olish kerak. Fayl nomlari har qanday sozlamada tekshiriladi — bu trafik sarflamaydi.</string>
+    <string name="jac_settings_scan_info">Fayllar faqat telefoningizda tekshiriladi — serverga hech narsa yuborilmaydi. Faylni yuklab olish uchun bosing: ochishdan oldin tekshiruv o‘tadi.</string>
 
+    <string name="jac_humogram_settings">Humogram</string>
+    <string name="jac_humogram_settings_info">Xavfsizlik, ko‘rinish va o‘zbek uslubi</string>
+    <string name="jac_ornament_header">Suhbatlar ro‘yxati naqshi</string>
+    <string name="jac_ornament_suzani">So‘zana</string>
+    <string name="jac_ornament_geometry">Geometrik yulduzlar</string>
+    <string name="jac_ornament_flag">Yarim oy va yulduzlar</string>
+    <string name="jac_ornament_off">Naqshsiz</string>
+    <string name="jac_ornament_note">Naqsh suhbatlar ro‘yxatining yuqori va past qismida juda xira chiziladi. U mavzuingizga moslashadi va suhbatlaringizni hech qachon to‘smaydi.</string>
+    <string name="jac_security_header">Xavfsizlik</string>
+    <string name="jac_checkup">Qurilma tekshiruvi</string>
+    <string name="jac_checkup_results">Natijalar</string>
+    <string name="jac_checkup_ok">OK</string>
+    <string name="jac_checkup_warn">Diqqat</string>
+    <string name="jac_checkup_risk">Xavf</string>
+    <string name="jac_checkup_unknown">Tekshirib bo‘lmadi</string>
+    <string name="jac_checkup_screen_lock">Ekran qulfi</string>
+    <string name="jac_checkup_screen_lock_advice">Ekran qulfisiz telefonni qo‘lga olgan har kim barcha yozishmalaringizni ko‘ra oladi. Tizim sozlamalarida PIN-kod, grafik kalit yoki barmoq izini o‘rnating.</string>
+    <string name="jac_checkup_root">Root ruxsati</string>
+    <string name="jac_checkup_root_advice">Qurilmada root borga o‘xshaydi. Root har qanday ilovaga boshqa ilovalarning ma’lumotlarini, jumladan xabarlaringizni o‘qish imkonini beradi. Root-ni o‘zingiz qilmagan bo‘lsangiz, telefonni mutaxassisga ko‘rsating.</string>
+    <string name="jac_checkup_adb">USB orqali nosozliklarni tuzatish</string>
+    <string name="jac_checkup_adb_advice">USB orqali nosozliklarni tuzatish kompyuterga telefonni kabel orqali boshqarish imkonini beradi. Dasturchiga qulay, qolganlarga xavfli — hozir ishlatmayotgan bo‘lsangiz, o‘chiring.</string>
+    <string name="jac_checkup_patch">Xavfsizlik yangilanishlari</string>
+    <string name="jac_checkup_patch_advice">Bu telefondagi so‘nggi xavfsizlik yangilanishiga bir yildan oshgan, ma’lum zaifliklar ochiq qolmoqda. Tizim yangilanishini tekshiring; bo‘lmasa, bu qurilmaga kamroq ishoning.</string>
+    <string name="jac_checkup_2fa">Bulut paroli (2FA)</string>
+    <string name="jac_checkup_2fa_advice">Bulut paroli SMS’dagi kirish kodi qo‘lga tushsa ham akkauntni himoya qiladi. Bu Telegram’ning eng muhim sozlamasi.</string>
+    <string name="jac_checkup_open_settings">Sozlamalarni ochish</string>
+    <string name="jac_checkup_set_up">Sozlash</string>
+    <string name="jac_checkup_note">Qurilma tekshiruvlari shu telefonning o‘zida bajariladi. Telegram’dan faqat bulut paroli holati so‘raladi — Sozlamalar ham xuddi shunday qiladi. Boshqa hech qayerga hech narsa yuborilmaydi.</string>
+    <string name="jac_checkup_remind">Xavfsizlik tekshiruvi anchadan beri o‘tkazilmagan, bu qurilmada esa e’tibor talab joylar bor.</string>
+    <string name="jac_checkup_remind_open">Tekshirish</string>
+    <string name="jac_link_hygiene">Havolalardan trekerlarni olib tashlash</string>
+    <string name="jac_link_hygiene_info">Havola ochilishidan oldin undan kuzatuv belgilari (utm_*, fbclid, gclid va shunga o‘xshashlar) olib tashlanadi. Sahifa o‘sha-o‘sha ochiladi; reklamachi siz haqingizda kamroq biladi.</string>
+    <string name="jac_channel">Tavsiya etilgan kanal</string>
+    <string name="jac_channel_hint_title">Firibgarlikdan ehtiyot bo‘ling</string>
+    <string name="jac_channel_hint_text">Tavsiya etamiz — kibermadaniyat kanali: %1$s</string>
+    <string name="jac_duress">Majburlash paroli</string>
+    <string name="jac_duress_on">Yoqilgan</string>
+    <string name="jac_duress_off">O‘chirilgan</string>
+    <string name="jac_duress_intro">Bosim ostida aytib yuborsa bo‘ladigan ikkinchi parol. Uni kiritsangiz ilova telefonda saqlagan hamma narsa — akkauntlar, yozishmalar, yuklab olingan fayllar — o‘chiriladi va ilova bo‘sh holda qayta ishga tushadi. Galereyaga allaqachon saqlangan fayllarga ta’sir qilmaydi.\n\nHimoya to‘liq bo‘lishi uchun bulut parolini (ikki bosqichli tekshiruv) ham o‘rnating: usiz SIM-kartangiz kimda bo‘lsa, SMS orqali qayta kirib, bulutdagi tarixni o‘qishi mumkin.</string>
+    <string name="jac_duress_cleared">Majburlash paroli o‘chirildi: u ilova paroli bilan bir xil bo‘lib qoldi. Yangi, boshqacha parol o‘rnating.</string>
+    <string name="jac_duress_need_passcode">Avval ilova parolini o‘rnating</string>
+    <string name="jac_duress_need_passcode_info">Majburlash paroli faqat ilova kirishda kod so‘raganda ishlaydi. Ilova parolini o‘rnating va shu yerga qayting.</string>
+    <string name="jac_duress_set">Majburlash parolini o‘rnatish</string>
+    <string name="jac_duress_change">Majburlash parolini o‘zgartirish</string>
+    <string name="jac_duress_remove">Majburlash parolini o‘chirish</string>
+    <string name="jac_duress_enter">Majburlash paroli</string>
+    <string name="jac_duress_confirm">Takrorlang</string>
+    <string name="jac_duress_save">Saqlash</string>
+    <string name="jac_duress_same_as_real">Bu sizning haqiqiy parolingiz. Majburlash paroli boshqacha bo‘lishi kerak, aks holda oddiy kirish ilovani tozalab yuboradi.</string>
+    <string name="jac_duress_action_info">Kiritilganda ilovaning telefondagi barcha ma’lumotlari o‘chiriladi va ilova bo‘sh holda qayta ishga tushadi. Aloqa bo‘lsa, serverga ham chiqish yuboriladi. Buni ortga qaytarib bo‘lmaydi — xato kiritmaydigan kodni tanlang.</string>
+    <string name="jac_creator">Muallif</string>
+    <string name="jac_made_by">%1$s tomonidan yaratilgan</string>
 </resources>

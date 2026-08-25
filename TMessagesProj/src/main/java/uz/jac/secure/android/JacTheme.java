@@ -65,6 +65,17 @@ public final class JacTheme {
     private static final int TEXT_LIGHT = 0xFF10181F;
 
     public static boolean isDark(Context context) {
+        // The APP's theme, not the system's. Telegram's theme is chosen inside
+        // the app and is frequently the opposite of the OS setting — a user on
+        // a dark theme with the phone in day mode is the common case. Reading
+        // the system uiMode painted our surfaces light while every Telegram
+        // pixel around them was dark, which is exactly what made the dialogs
+        // read as foreign. Fall back to the system flag only if the theme
+        // cannot be asked.
+        try {
+            return org.telegram.ui.ActionBar.Theme.isCurrentThemeDark();
+        } catch (Throwable ignored) {
+        }
         int mode = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         return mode == Configuration.UI_MODE_NIGHT_YES;
     }
@@ -142,6 +153,45 @@ public final class JacTheme {
 
     public static int card(Context c) {
         return isDark(c) ? CARD_DARK : CARD_LIGHT;
+    }
+
+    /**
+     * Dialog surfaces, taken from Telegram's own dialog theme.
+     *
+     * A warning dialog has to look like it belongs to the app it is warning
+     * inside of — a foreign-looking modal on a security screen is the one that
+     * gets dismissed as a scam. So the background, title and body colours come
+     * straight from the keys Telegram paints its own alerts with, and fall back
+     * to the card constants only if the theme cannot be read.
+     */
+    public static int dialogBackground(Context c) {
+        try {
+            int v = org.telegram.ui.ActionBar.Theme.getColor(
+                    org.telegram.ui.ActionBar.Theme.key_dialogBackground);
+            if (v != 0) return v;
+        } catch (Throwable ignored) {
+        }
+        return card(c);
+    }
+
+    public static int dialogTitle(Context c) {
+        try {
+            int v = org.telegram.ui.ActionBar.Theme.getColor(
+                    org.telegram.ui.ActionBar.Theme.key_dialogTextBlack);
+            if (v != 0) return v;
+        } catch (Throwable ignored) {
+        }
+        return text(c);
+    }
+
+    public static int dialogBody(Context c) {
+        try {
+            int v = org.telegram.ui.ActionBar.Theme.getColor(
+                    org.telegram.ui.ActionBar.Theme.key_dialogTextGray3);
+            if (v != 0) return v;
+        } catch (Throwable ignored) {
+        }
+        return textMuted(c);
     }
 
     public static int text(Context c) {

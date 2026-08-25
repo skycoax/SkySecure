@@ -26,15 +26,21 @@ import uz.jac.secure.core.model.Verdict;
  * patches/0001-jac-scan-gate.patch). The contract with the caller is small and
  * strict:
  *
- *   * {@link #onFileLoaded} ALWAYS invokes its continuation, exactly once. It
- *     delays the announcement of a finished download; it never drops it. A
- *     scanner that can silently swallow a file would break Telegram ToS 1.3
- *     ("all basic features must work exactly as in the official client") and,
- *     more practically, would look like a bug in the messenger.
+ *   * {@link #onFileLoaded} ALWAYS invokes its continuation, exactly once,
+ *     and does so IMMEDIATELY — the download is announced the moment the last
+ *     byte lands, exactly as in upstream Telegram, and the scan runs behind
+ *     it. Holding the announcement until the verdict was the original design,
+ *     and it put the scanner's latency inside the download UI: the progress
+ *     ring sat at full and kept spinning for as long as the scan took, which
+ *     on a slow engine read as a transfer that never finishes. The scan is a
+ *     state the bubble renders (red, "checking"), not a stage of the download.
  *
- *   * A MALICIOUS verdict moves the file into app-private quarantine BEFORE the
- *     continuation runs, and the path passed onward is the quarantined one, so
- *     no other component ever learns the original location or can export it.
+ *   * A MALICIOUS verdict still moves the file into app-private quarantine —
+ *     after the announcement now, not before it. What stands between the user
+ *     and a malicious file is not the file's address but the open gate: every
+ *     path that could hand a file to the system runs through ScanOpenGate,
+ *     which blocks on the verdict, so learning the original location buys an
+ *     attacker-sent file nothing.
  *
  *   * Secret chats take the offline path: {@link ScanMode#SECRET_CHAT} keeps
  *     every hash and URL on the device and writes nothing to the cache. Not a
@@ -68,10 +74,6 @@ public final class ScanGate {
      * round-trip finishes comfortably inside it on a slow connection.
      */
     private static final long SCAN_DEADLINE_MS = 12_000L;
-
-    /** For entry points where nothing is waiting on the file. */
-    private static final Continuation NO_CONTINUATION = file -> {
-    };
 
     private final ExecutorService executor;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -138,6 +140,48 @@ public final class ScanGate {
     }
 
     /**
+     * The verdict for a path, whichever account holds it — or null.
+     *
+     * The open gate ({@link ScanOpenGate}) runs from {@code AndroidUtilities},
+     * a static utility with no account in hand: a file reached from the
+     * Downloads tab or shared-media grid arrives as a bare path. State stores
+     * are per-account and hold different files, so the gate asks every one and
+     * takes the first hit. There is no ambiguity to resolve — a given cache
+     * path belongs to exactly one account's download.
+     */
+    public static ScanStateStore.State findState(String path) {
+        if (path == null) {
+            return null;
+        }
+        for (ScanGate gate : INSTANCES.values()) {
+            ScanStateStore.State state = gate.getStateStore().get(path);
+            if (state != null) {
+                return state;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Record that the user accepted the risk on this path, on whichever
+     * account holds its state. Best-effort: an open the user has confirmed
+     * must go through even if nothing was on record to mark.
+     */
+    public static void markOverriddenAnywhere(String path) {
+        if (path == null) {
+            return;
+        }
+        for (ScanGate gate : INSTANCES.values()) {
+            if (gate.getStateStore().get(path) != null) {
+                try {
+                    gate.acceptRisk(new File(path), true, true);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+    }
+
+    /**
      * Entry point from the patched FileLoader.
      *
      * @param streamingSha256 digest accumulated during download, or null if the
@@ -180,8 +224,18 @@ public final class ScanGate {
         // second, redundant scan of it.
         fullyScanned.add(finalFile.getAbsolutePath());
 
+        // Announce the download NOW, on the caller's thread, exactly where the
+        // unpatched FileLoader would have. The scan is not allowed to sit
+        // inside the download's completion path: while the continuation waited
+        // on the verdict, mediaExists() stayed false, the button state stayed
+        // "loading", and the progress ring span at 100% for the whole scan —
+        // the stuck-spinner bug. Safety does not live here; it lives in the
+        // open gate, which refuses to hand the file to the system until the
+        // verdict allows it.
+        continuation.onScanned(finalFile);
+
         stateStore.setScanning(finalFile.getAbsolutePath(), dialogId);
-        scanAndPublish(finalFile, displayName, declaredMime, mode, dialogId, streamingSha256, continuation);
+        scanAndPublish(finalFile, displayName, declaredMime, mode, dialogId, streamingSha256);
     }
 
     /**
@@ -245,7 +299,7 @@ public final class ScanGate {
         // null digest: nothing streamed, so the engine hashes the finished file.
         // That is a second full pass over the bytes, which is why the download
         // path goes to the trouble of hashing on the way past.
-        scanAndPublish(file, displayName, declaredMime, mode, dialogId, null, NO_CONTINUATION);
+        scanAndPublish(file, displayName, declaredMime, mode, dialogId, null);
     }
 
     /**
@@ -275,16 +329,19 @@ public final class ScanGate {
      * @param scanWillFollow whether a download has actually been started, so
      *        the bytes really are on their way.
      *
-     *        <p>False when {@link ScanSettings} said no — mobile data, or a file
-     *        over the fetch cap. The spinner is then a lie with no expiry: it
-     *        says work is in progress when nothing is, and it never resolves,
-     *        because the thing that would resolve it is the download we just
-     *        decided not to start. A 65 MB file sat at "checking..." for as long
-     *        as the chat stayed open.
+     *        <p>Always false now: the scanner never starts a download of its
+     *        own — fetching is the user's decision, taken by tapping the file.
+     *        The parameter is kept because the spinner logic it guards is the
+     *        important part: a "checking…" state may only be shown when bytes
+     *        are actually on their way, otherwise it is a lie with no expiry.
+     *        A 65 MB file once sat at "checking..." for as long as the chat
+     *        stayed open, because the download that would have resolved it was
+     *        never going to start.
      *
      *        <p>So on false this publishes nothing unless the name itself is
-     *        damning. A blank bubble is honest — we have no opinion yet — and
-     *        the user's own tap on download is what starts the real scan.
+     *        damning. A red "not checked" mark on an installer is honest — we
+     *        have no opinion yet and say so — and the user's own tap on
+     *        download is what starts the real scan.
      */
     public void previewByName(String fileName, File plannedFile, Object parentObject, boolean scanWillFollow) {
         if (plannedFile == null || fileName == null || fileName.isEmpty()) {
@@ -347,10 +404,13 @@ public final class ScanGate {
 
     /**
      * The shared tail of every scan: run the engine, quarantine if the verdict
-     * demands it, publish, then hand the file onward.
+     * demands it, publish.
      *
      * Callers publish the "scanning" state themselves before calling, because
-     * only they know whether a preview state is being replaced.
+     * only they know whether a preview state is being replaced. Nothing waits
+     * on this method — the download, if there was one, was announced before it
+     * was called — so the only output is the state store publish, which the
+     * bubbles listen to.
      */
     private void scanAndPublish(
             File file,
@@ -358,8 +418,7 @@ public final class ScanGate {
             String declaredMime,
             ScanMode mode,
             long dialogId,
-            String streamingSha256,
-            Continuation continuation
+            String streamingSha256
     ) {
         // A scan that never answers must not spin forever.
         //
@@ -411,9 +470,6 @@ public final class ScanGate {
                 // verdict at all while clean and suspicious ones showed theirs.
                 stateStore.alias(file.getAbsolutePath(), result.getAbsolutePath());
             }
-
-            final File delivered = result;
-            mainHandler.post(() -> continuation.onScanned(delivered));
         });
     }
 

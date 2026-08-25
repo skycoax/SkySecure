@@ -1275,6 +1275,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     // The scan verdict, drawn inside the document bubble. One instance per
     // cell; cells are recycled, so jacScanBound is the token that tells a live
     // binding from a stale one.
+    private static final boolean JAC_VERDICT_BLOCK_ENABLED = false;
     private uz.jac.secure.android.ScanVerdictBlock jacScanBlock;
     private MessageObject jacScanBound;
     private int jacScanX, jacScanY;
@@ -1289,6 +1290,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     /** Lazily built; only a malicious file ever draws the mark. */
     private Paint jacVirusPaint;
     private final RectF jacVirusBounds = new RectF();
+    private TextPaint jacBadgePaint;
+    private Paint jacBadgeBgPaint;
+    private final RectF jacBadgeRect = new RectF();
     /** The store this cell is subscribed to, or null while detached. */
     private uz.jac.secure.android.ScanStateStore jacListenerStore;
     /**
@@ -1470,6 +1474,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (state != null && !jacIsDangerous(state) && !jacIsInstaller()) {
             return false;
         }
+        // No per-cell state to act on, or no path to act on it with. This
+        // happens for an installer reached before any scan wrote a state, and
+        // it used to walk straight into a null dereference two lines down
+        // (state.filePath / new File(jacScanPath)). Let the tap fall through:
+        // the open still runs through ScanOpenGate in AndroidUtilities, which
+        // treats a stateless installer as dangerous and shows the same warning.
+        if (state == null || jacScanPath == null) {
+            return false;
+        }
         Activity activity = AndroidUtilities.findActivity(getContext());
         if (activity == null || currentMessageObject == null) {
             return false;
@@ -1531,12 +1544,48 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
      * this is dangerous; if the wording rules change later, both follow.
      */
     private boolean jacIsDangerous(uz.jac.secure.android.ScanStateStore.State state) {
-        if (state == null || state.scanning || state.overridden) {
+        if (state == null || state.overridden) {
             return false;
         }
+        // A scan in progress is dangerous, not neutral. It used to be excluded
+        // here, which made the disc go calm the instant checking began — the
+        // one moment the file is least accounted for. ScanUi now paints the
+        // scanning state red too, so the plain colour test below catches it,
+        // and the two surfaces (disc and verdict block) can no longer disagree.
         uz.jac.secure.android.ScanUi.Presentation p =
                 uz.jac.secure.android.ScanUi.present(getContext(), state);
         return p != null && p.colour == uz.jac.secure.android.JacTheme.danger(getContext());
+    }
+
+    /**
+     * The colour of the mark this file's row wears, or 0 for none.
+     *
+     * Two levels the user can tell apart: red for what the scanner is sure is
+     * bad or has never checked (malicious, or an unchecked/scanning installer),
+     * amber for what merely looks off (suspicious). This is the single source
+     * the file name, the disc and the shared-media icon all read from, so they
+     * cannot drift to different colours. Overridden and clean files wear
+     * nothing.
+     */
+    private int jacMarkColour() {
+        final int danger = uz.jac.secure.android.JacTheme.danger(getContext());
+        final int warning = uz.jac.secure.android.JacTheme.warning(getContext());
+        uz.jac.secure.android.ScanStateStore.State state = jacState();
+        if (state != null && (state.overridden
+                || state.verdict == uz.jac.secure.core.model.Verdict.CLEAN)) {
+            return 0;
+        }
+        if (state == null) {
+            return jacIsInstaller() ? danger : 0;
+        }
+        uz.jac.secure.android.ScanUi.Presentation p =
+                uz.jac.secure.android.ScanUi.present(getContext(), state);
+        if (p != null && (p.colour == danger || p.colour == warning)) {
+            return p.colour;
+        }
+        // A verdict the scanner rendered neutral (a local "unknown") still means
+        // red on an installer: unknown about an app that installs is danger.
+        return jacIsInstaller() ? danger : 0;
     }
 
     /**
@@ -10984,7 +11033,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     // and idempotent on repeat calls, and it posts its own work
                     // off this layout pass.
                     uz.jac.secure.android.ScanAutoStart.ensure(currentAccount, currentMessageObject, jacFile);
-                    if (jacScanBlock == null && jacState != null) {
+                    // The in-bubble verdict block (title + description) is off by
+                    // product decision: the coloured disc and file name carry the
+                    // signal in the bubble, and the full words live in the
+                    // warning dialog on tap. A paragraph under every installer
+                    // was noise on the common case and repeated what the tap
+                    // already says. Kept behind a flag rather than deleted so the
+                    // touch/measure/draw sites below stay dormant, not removed.
+                    if (JAC_VERDICT_BLOCK_ENABLED && jacScanBlock == null && jacState != null) {
                         jacScanBlock = new uz.jac.secure.android.ScanVerdictBlock(getContext(), jacScanListener);
                     }
                     // bind() runs even with a null state so a recycled cell drops
@@ -15424,8 +15480,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             // the eye lands on first; leaving it in the ordinary colour while
             // the icon shouted was a mixed signal, and a mixed signal reads as
             // the reassuring half.
-            if (jacIsInstaller() || jacIsDangerous(jacState())) {
-                Theme.chat_docNamePaint.setColor(uz.jac.secure.android.JacTheme.danger(getContext()));
+            final int jacNameColour = jacMarkColour();
+            if (jacNameColour != 0) {
+                Theme.chat_docNamePaint.setColor(jacNameColour);
             }
 
             float x;
@@ -26666,26 +26723,23 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
         uz.jac.secure.android.ScanStateStore.State state = jacState();
-        // Every installer is red, checked or not -- see jacIsInstaller().
-        final boolean dangerous = jacIsDangerous(state) || jacIsInstaller();
-        // Amber for an installer nobody has checked. The disc it covers is the
-        // download button, which is exactly the point: users told us they will
-        // not press a download arrow on a file they are unsure about, because
-        // they think the arrow installs it. An amber shield over the same
-        // target turns "download this" into "check this", which is both what
-        // the button does and what they want.
-        final boolean unchecked = state != null && state.unchecked;
-        if (!dangerous && !unchecked) {
+        // Two colours now: red for danger, amber for suspicion. jacMarkColour is
+        // the shared source — the file name and the shared-media icon read the
+        // same value — and returns 0 for a file that wears nothing (overridden,
+        // clean, or a plain non-installer document).
+        final int markColour = jacMarkColour();
+        if (markColour == 0) {
             return;
         }
-        // Never over a download in progress.
-        //
-        // That disc is where Telegram draws the progress ring and the
-        // percentage, so painting the amber shield on top of it hid exactly the
-        // feedback the user needs while waiting -- they could not tell a
-        // download from a hang. The verdict block below still says the file is
-        // unchecked; the button goes back to being a button.
-        if (unchecked && !dangerous && (buttonState == 1 || buttonState == 4)) {
+        final boolean amber = markColour == uz.jac.secure.android.JacTheme.warning(getContext());
+        // Never over a download in progress. That disc is where Telegram draws
+        // the progress ring and the percentage; covering it hid exactly the
+        // feedback the user needs while the bytes come down, so a download read
+        // as a hang. Before the download the same disc is the download arrow,
+        // and the red mark over it is the point — it reads as "this is not safe
+        // to fetch and open". After the download the ring is gone and the mark
+        // returns, now over the scan.
+        if (buttonState == 1 || buttonState == 4) {
             return;
         }
         // The blue disc is the radial progress rect, not the photoImage box.
@@ -26711,21 +26765,66 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             jacVirusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         }
         jacVirusPaint.setStyle(Paint.Style.FILL);
-        jacVirusPaint.setColor(dangerous
-                ? uz.jac.secure.android.JacTheme.danger(getContext())
-                : uz.jac.secure.android.JacTheme.warning(getContext()));
+        jacVirusPaint.setColor(markColour);
         canvas.drawCircle(cx, cy, radius, jacVirusPaint);
 
-        // White glyph on the red disc. The glyph punches its two cores out
-        // inside its own layer, so they land on the disc rather than on the
-        // bubble behind it.
+        // White glyph on the coloured disc: the virus mark for danger, the
+        // caution triangle for suspicion. The glyph punches its cores out inside
+        // its own layer, so they land on the disc rather than the bubble behind.
         jacVirusPaint.setColor(0xFFFFFFFF);
         final float half = radius * 0.52f;
         jacVirusBounds.set(cx - half, cy - half, cx + half, cy + half);
         uz.jac.secure.android.JacIcons.draw(canvas,
-                dangerous ? uz.jac.secure.android.JacIcons.Glyph.VIRUS
-                        : uz.jac.secure.android.JacIcons.Glyph.SHIELD,
+                amber ? uz.jac.secure.android.JacIcons.Glyph.WARNING
+                        : uz.jac.secure.android.JacIcons.Glyph.VIRUS,
                 jacVirusBounds, jacVirusPaint);
+
+        // The word "Проверка" as a small pill under the disc, while a verdict is
+        // still pending — the label the user asked to always be able to see, in
+        // their own language. Only during the two unsettled states: an installer
+        // nobody has checked, and one being checked right now. Once there is a
+        // verdict the block below carries the words and this would just repeat
+        // them.
+        final boolean pending = state == null || state.unchecked || state.scanning;
+        if (pending) {
+            jacDrawScanBadge(canvas, cx, cy + radius);
+        }
+    }
+
+    /** The localised "checking" caption, centred under the file disc. */
+    private void jacDrawScanBadge(Canvas canvas, float cx, float discBottom) {
+        String label = uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_scan_badge);
+        if (label == null || label.isEmpty()) {
+            return;
+        }
+        if (jacBadgePaint == null) {
+            jacBadgePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            jacBadgePaint.setTextSize(AndroidUtilities.dp(9));
+            jacBadgePaint.setTypeface(AndroidUtilities.bold());
+            jacBadgePaint.setTextAlign(Paint.Align.CENTER);
+        }
+        if (jacBadgeBgPaint == null) {
+            jacBadgeBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            jacBadgeBgPaint.setStyle(Paint.Style.FILL);
+        }
+        final int colour = uz.jac.secure.android.JacTheme.danger(getContext());
+        final float padH = AndroidUtilities.dp(5);
+        final float padV = AndroidUtilities.dp(2);
+        final float textW = jacBadgePaint.measureText(label);
+        Paint.FontMetrics fm = jacBadgePaint.getFontMetrics();
+        final float textH = -fm.ascent + fm.descent;
+        final float pillW = textW + padH * 2;
+        final float pillH = textH + padV * 2;
+        final float top = discBottom - AndroidUtilities.dp(3);
+        final float left = cx - pillW / 2f;
+        jacBadgeRect.set(left, top, left + pillW, top + pillH);
+        // Faint danger wash for the pill, solid danger for the text: a quiet
+        // chip, not a second alarm.
+        jacBadgeBgPaint.setColor((colour & 0x00FFFFFF) | 0x26000000);
+        final float r = pillH / 2f;
+        canvas.drawRoundRect(jacBadgeRect, r, r, jacBadgeBgPaint);
+        jacBadgePaint.setColor(colour);
+        canvas.drawText(label, cx, top + padV - fm.ascent, jacBadgePaint);
     }
 
     private Paint clipPaint;

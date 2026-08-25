@@ -443,6 +443,19 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
             placeholderImageView.setVisibility(VISIBLE);
             extTextView.setVisibility(VISIBLE);
             placeholderImageView.setImageResource(AndroidUtilities.getThumbForNameOrMime(fileName, document.mime_type, false));
+            // JAC Secure: paint the file icon by verdict — red for a dangerous
+            // installer, amber for a suspicious one — instead of leaving the
+            // stock green that reads as an ordinary, safe document. This list is
+            // one of the ways a saved APK is reached, and the green icon here
+            // undercut the red one in the chat bubble.
+            int jacTint = uz.jac.secure.android.ScanOpenGate.markColour(getContext(),
+                    FileLoader.getInstance(UserConfig.selectedAccount).getPathToMessage(messageObject.messageOwner),
+                    fileName, document.mime_type);
+            if (jacTint != 0) {
+                placeholderImageView.setColorFilter(new PorterDuffColorFilter(jacTint, PorterDuff.Mode.SRC_IN));
+            } else {
+                placeholderImageView.clearColorFilter();
+            }
             extTextView.setText((idx = fileName.lastIndexOf('.')) == -1 ? "" : fileName.substring(idx + 1).toLowerCase());
             TLRPC.PhotoSize bigthumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 320);
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 40);

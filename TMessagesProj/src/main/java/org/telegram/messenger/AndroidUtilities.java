@@ -4179,6 +4179,10 @@ public class AndroidUtilities {
     }
 
     public static void openDocument(MessageObject message, Activity activity, BaseFragment parentFragment) {
+        openDocument(message, activity, parentFragment, false);
+    }
+
+    public static void openDocument(MessageObject message, Activity activity, BaseFragment parentFragment, boolean skipScanGate) {
         if (message == null) {
             return;
         }
@@ -4195,6 +4199,15 @@ public class AndroidUtilities {
             f = FileLoader.getInstance(UserConfig.selectedAccount).getPathToMessage(message.messageOwner);
         }
         if (f != null && f.exists()) {
+            // JAC Secure: same installer gate as openForView, on the other
+            // static path to the OS. Re-enters with skipScanGate=true after the
+            // override. Themes are handled below and are never installers, so
+            // the gate simply passes them through.
+            final MessageObject jacMessage = message;
+            if (!skipScanGate && uz.jac.secure.android.ScanOpenGate.guard(activity, f, fileName, document.mime_type,
+                    () -> openDocument(jacMessage, activity, parentFragment, true))) {
+                return;
+            }
             if (parentFragment != null && f.getName().toLowerCase().endsWith("attheme")) {
                 Theme.ThemeInfo themeInfo = Theme.applyThemeFile(f, message.getDocumentName(), null, true);
                 if (themeInfo != null) {
@@ -4269,6 +4282,10 @@ public class AndroidUtilities {
     }
 
     public static boolean openForView(File f, String fileName, String mimeType, final Activity activity, Theme.ResourcesProvider resourcesProvider, boolean restrict) {
+        return openForView(f, fileName, mimeType, activity, resourcesProvider, restrict, false);
+    }
+
+    public static boolean openForView(File f, String fileName, String mimeType, final Activity activity, Theme.ResourcesProvider resourcesProvider, boolean restrict, boolean skipScanGate) {
         if (f != null && f.exists()) {
             String realMimeType = null;
             Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -4287,6 +4304,19 @@ public class AndroidUtilities {
                         realMimeType = null;
                     }
                 }
+            }
+            // JAC Secure: the single road out to the OS installer. Every way a
+            // file can be opened — the chat cell, the Downloads tab, shared
+            // media, search, the photo viewer — ends here, so an installer is
+            // stopped here once rather than at each of those doors. The gate
+            // re-enters with skipScanGate=true after the user's two-step
+            // override, which is why proceed is this same call.
+            final String jacFileName = fileName;
+            final String jacMimeType = mimeType;
+            final boolean jacRestrict = restrict;
+            if (!skipScanGate && uz.jac.secure.android.ScanOpenGate.guard(activity, f, fileName, realMimeType,
+                    () -> openForView(f, jacFileName, jacMimeType, activity, resourcesProvider, jacRestrict, true))) {
+                return true;
             }
             if (realMimeType != null && realMimeType.equals("application/vnd.android.package-archive")) {
                 if (restrict) return true;

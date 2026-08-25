@@ -688,6 +688,13 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(null));
         }
 
+        // Humogram: our own settings, at the very top and in their own section,
+        // where the appearance choices this fork adds (the chat-list ornament,
+        // and whatever else lands here) live together rather than being buried
+        // among Telegram's.
+        items.add(SettingCell.Factory.of(25, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_features, uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_humogram_settings), uz.jac.secure.android.JacStrings.get(getContext(), R.string.jac_humogram_settings_info)));
+        items.add(UItem.asShadow(null));
+
         items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
         items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
         items.add(SettingCell.Factory.of(3, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_privacy, getString(R.string.SettingsPrivacySecurity), getString(R.string.SettingsPrivacySecurityInfo)));
@@ -902,6 +909,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 }
                 break;
             }
+            case 25:
+                presentSettingFragment(new uz.jac.secure.android.HumogramSettingsActivity());
+                break;
         }
     }
 

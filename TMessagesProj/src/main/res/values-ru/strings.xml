@@ -472,19 +472,20 @@
 
     <string name="jac_settings_privacy_summary">Только цифровой отпечаток файла и результат. Никогда — имена файлов, сообщения или отправителей.</string>
 
-    <string name="jac_unchecked_title">В этом файле обнаружен вирус</string>
+    <string name="jac_unchecked_title">Не проверено — возможно, опасно</string>
 
-    <string name="jac_unchecked_body">Не устанавливайте его. Такое приложение может снять деньги с ваших банковских приложений, прочитать личные данные и следить за всем, что вы делаете на телефоне.</string>
+    <string name="jac_unchecked_body">Пока не открывайте. Такие установочные файлы часто крадут деньги из банковских приложений и коды из SMS. Идёт проверка.</string>
 
     <string name="jac_scan_timeout_title">Не удалось проверить файл</string>
 
     <string name="jac_scan_timeout_body">Проверка не завершилась. Не открывайте файл, пока он не проверен.</string>
 
     <string name="jac_check_action">Проверить</string>
+    <string name="jac_scan_badge">Проверка</string>
 
     <string name="jac_virus_title">Это вирус</string>
 
-    <string name="jac_virus_body">Неважно какой — это вирус. Если вы его установите, он сможет получить ваши личные данные, списать деньги со счетов и получить доступ к другим приложениям, включая Telegram.</string>
+    <string name="jac_virus_body">Если установить — украдут деньги, коды из SMS и доступ к вашим приложениям, включая Telegram. Не устанавливайте.</string>
 
     <string name="jac_virus_close">Закрыть</string>
 
@@ -499,5 +500,58 @@
     <string name="jac_settings_autocheck_always">Всегда</string>
 
     <string name="jac_settings_autocheck_info">Чтобы проверить файл до того, как вы его откроете, его нужно сначала загрузить. Имена файлов проверяются при любой настройке — это не расходует трафик.</string>
+    <string name="jac_settings_scan_info">Файлы проверяются только на вашем телефоне — на сервер ничего не отправляется. Нажмите на файл, чтобы загрузить его: проверка пройдёт до того, как его можно будет открыть.</string>
 
+    <string name="jac_humogram_settings">Humogram</string>
+    <string name="jac_humogram_settings_info">Безопасность, оформление и узбекский стиль</string>
+    <string name="jac_ornament_header">Узор списка чатов</string>
+    <string name="jac_ornament_suzani">Сюзане</string>
+    <string name="jac_ornament_geometry">Геометрические звёзды</string>
+    <string name="jac_ornament_flag">Полумесяц и звёзды</string>
+    <string name="jac_ornament_off">Без узора</string>
+    <string name="jac_ornament_note">Узор рисуется еле заметно сверху и снизу списка чатов. Он подстраивается под вашу тему и никогда не перекрывает переписку.</string>
+    <string name="jac_security_header">Безопасность</string>
+    <string name="jac_checkup">Проверка устройства</string>
+    <string name="jac_checkup_results">Результаты</string>
+    <string name="jac_checkup_ok">ОК</string>
+    <string name="jac_checkup_warn">Внимание</string>
+    <string name="jac_checkup_risk">Риск</string>
+    <string name="jac_checkup_unknown">Не удалось проверить</string>
+    <string name="jac_checkup_screen_lock">Блокировка экрана</string>
+    <string name="jac_checkup_screen_lock_advice">Без блокировки экрана любой, кто возьмёт телефон в руки, получит все ваши переписки. Установите PIN-код, графический ключ или отпечаток в настройках системы.</string>
+    <string name="jac_checkup_root">Root-доступ</string>
+    <string name="jac_checkup_root_advice">Похоже, на устройстве есть root. Root позволяет любому приложению читать данные других приложений, включая ваши сообщения. Если вы не делали root сами — покажите телефон специалисту.</string>
+    <string name="jac_checkup_adb">Отладка по USB</string>
+    <string name="jac_checkup_adb_advice">Отладка по USB позволяет компьютеру управлять телефоном по кабелю. Удобно разработчику, опасно всем остальным — выключите, если не пользуетесь прямо сейчас.</string>
+    <string name="jac_checkup_patch">Обновления безопасности</string>
+    <string name="jac_checkup_patch_advice">Последнему обновлению безопасности на этом телефоне больше года, известные уязвимости остаются открытыми. Проверьте обновления системы; если их нет — доверяйте этому устройству меньше.</string>
+    <string name="jac_checkup_2fa">Облачный пароль (2FA)</string>
+    <string name="jac_checkup_2fa_advice">Облачный пароль защищает аккаунт, даже если кто-то перехватит код входа из SMS. Это самая важная настройка Telegram.</string>
+    <string name="jac_checkup_open_settings">Открыть настройки</string>
+    <string name="jac_checkup_set_up">Настроить</string>
+    <string name="jac_checkup_note">Проверки устройства выполняются здесь, на телефоне. У Telegram запрашивается только статус облачного пароля — так же, как это делают Настройки. Больше никуда ничего не отправляется.</string>
+    <string name="jac_checkup_remind">Вы давно не проверяли безопасность, а на этом устройстве есть что исправить.</string>
+    <string name="jac_checkup_remind_open">Проверить</string>
+    <string name="jac_link_hygiene">Убирать трекеры из ссылок</string>
+    <string name="jac_link_hygiene_info">Перед открытием из ссылки вырезаются метки слежения (utm_*, fbclid, gclid и похожие). Страница откроется той же; рекламодатель узнает о вас меньше.</string>
+    <string name="jac_channel">Рекомендуемый канал</string>
+    <string name="jac_channel_hint_title">Защитите себя от мошенников</string>
+    <string name="jac_channel_hint_text">Рекомендуем канал о киберграмотности: %1$s</string>
+    <string name="jac_duress">Пароль под принуждением</string>
+    <string name="jac_duress_on">Вкл.</string>
+    <string name="jac_duress_off">Выкл.</string>
+    <string name="jac_duress_intro">Второй пароль, который можно выдать под давлением. При его вводе стирается всё, что приложение хранит на телефоне, и оно перезапускается пустым — аккаунты, переписки, скачанные файлы. Остаётся чистый Telegram. Файлы, уже сохранённые в галерею, не затрагиваются.\n\nЧтобы защита была полной, установите также облачный пароль (двухэтапную проверку): без него тот, у кого ваша SIM-карта, сможет войти по SMS и прочитать историю из облака.</string>
+    <string name="jac_duress_cleared">Пароль под принуждением удалён: он совпал с код-паролём приложения. Задайте новый, отличающийся.</string>
+    <string name="jac_duress_need_passcode">Сначала установите код-пароль</string>
+    <string name="jac_duress_need_passcode_info">Пароль под принуждением работает только когда приложение запрашивает код на входе. Установите код-пароль и вернитесь сюда.</string>
+    <string name="jac_duress_set">Задать пароль под принуждением</string>
+    <string name="jac_duress_change">Изменить пароль под принуждением</string>
+    <string name="jac_duress_remove">Удалить пароль под принуждением</string>
+    <string name="jac_duress_enter">Пароль под принуждением</string>
+    <string name="jac_duress_confirm">Повторите</string>
+    <string name="jac_duress_save">Сохранить</string>
+    <string name="jac_duress_same_as_real">Это ваш настоящий пароль. Пароль под принуждением должен отличаться, иначе обычная разблокировка сотрёт приложение.</string>
+    <string name="jac_duress_action_info">При вводе стираются все данные приложения на телефоне и оно перезапускается пустым. При наличии связи на сервер также отправляется выход из аккаунтов. Это необратимо — выберите код, который не введёте по ошибке.</string>
+    <string name="jac_creator">Создатель</string>
+    <string name="jac_made_by">Сделал %1$s</string>
 </resources>
