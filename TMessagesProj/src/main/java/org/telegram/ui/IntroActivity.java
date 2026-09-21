@@ -140,13 +140,20 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
                 LocaleController.getString(R.string.Page4Title),
                 LocaleController.getString(R.string.Page6Title)
         };
+        // Humogram: read the onboarding messages straight from our resources
+        // rather than through LocaleController. Telegram's downloaded language
+        // pack carries these strings with "Telegram" hard-coded in them and
+        // would override our XML — the same reason the Page1 title is set from
+        // resources in createView. Reading from resources keeps the wordmark
+        // ours on the very first screen a new user sees.
+        final android.content.res.Resources res = ApplicationLoader.applicationContext.getResources();
         messages = new String[]{
-                LocaleController.getString(R.string.Page1Message),
-                LocaleController.getString(R.string.Page2Message),
-                LocaleController.getString(R.string.Page3Message),
-                LocaleController.getString(R.string.Page5Message),
-                LocaleController.getString(R.string.Page4Message),
-                LocaleController.getString(R.string.Page6Message)
+                res.getString(R.string.Page1Message),
+                res.getString(R.string.Page2Message),
+                res.getString(R.string.Page3Message),
+                res.getString(R.string.Page5Message),
+                res.getString(R.string.Page4Message),
+                res.getString(R.string.Page6Message)
         };
         return true;
     }

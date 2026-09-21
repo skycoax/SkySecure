@@ -20,7 +20,7 @@
     <string name="jac_about_title">Humogram haqida</string>
     <string name="jac_about_version">Versiya %1$s (%2$s)</string>
     <string name="jac_about_scanner_heading">Tekshiruv nima qiladi</string>
-    <string name="jac_about_scanner_body">Sizga kelgan har bir fayl ochilishidan yoki ulashilishidan oldin tekshiriladi, har bir havola esa ochilishidan oldin. Serverimiz kerak bo\'lgan tekshiruvlarda faqat faylning raqamli izi yoki manzilning o\'zi yuboriladi — fayl nomlari, xabar matni yoki kim yuborgani hech qachon yuborilmaydi.\n\nMaxfiy chatlarda tekshiruv faqat qurilmangizda bajariladi. Hech qayerga hech narsa yuborilmaydi.</string>
+    <string name="jac_about_scanner_body">Sizga kelgan har bir fayl ochilishidan yoki ulashilishidan oldin tekshiriladi, har bir havola esa ochilishidan oldin. Barcha tekshiruvlar butunlay qurilmangizda bajariladi — na fayllar, na raqamli izlar, na havolalar, na fayl nomlari, na xabar matni tekshiruv uchun hech qayerga yuborilmaydi.\n\nMaxfiy chatlar ham xuddi shunday — faqat qurilmangizda tekshiriladi.</string>
     <string name="jac_about_licence_heading">Litsenziya va manba kodi</string>
     <string name="jac_about_open_source">Manba kodini ko\'rish</string>
     <string name="jac_about_privacy">Maxfiylik siyosati</string>

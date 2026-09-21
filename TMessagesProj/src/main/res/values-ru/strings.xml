@@ -216,11 +216,11 @@
     <string name="Page5Title">Мощный</string>
     <string name="Page6Title">Облачный</string>
     <string name="Page1Message">Самый **быстрый** мессенджер в мире.\n**Бесплатный** и **безопасный**.</string>
-    <string name="Page2Message">**Telegram** доставляет сообщения быстрее\nлюбого другого приложения.</string>
-    <string name="Page3Message">**Telegram** предоставляет бесплатное безлимитное облачное хранилище для чатов и медиа.\n</string>
-    <string name="Page4Message">**Telegram** защищает Вашу переписку от злоумышленников.</string>
-    <string name="Page5Message">**Telegram** не ограничивает размер\n Ваших медиафайлов и чатов.</string>
-    <string name="Page6Message">В **Telegram** можно переписываться с любого количества устройств.</string>
+    <string name="Page2Message">**Humogram** доставляет сообщения быстрее\nлюбого другого приложения.</string>
+    <string name="Page3Message">**Humogram** предоставляет бесплатное безлимитное облачное хранилище для чатов и медиа.\n</string>
+    <string name="Page4Message">**Humogram** защищает Вашу переписку от злоумышленников.</string>
+    <string name="Page5Message">**Humogram** не ограничивает размер\n Ваших медиафайлов и чатов.</string>
+    <string name="Page6Message">В **Humogram** можно переписываться с любого количества устройств.</string>
     <string name="StartMessaging">Начать общение</string>
     <!--date formatters-->
     <string name="formatterBoostExpired">dd MMM yyyy</string>
@@ -279,7 +279,7 @@
 
     <string name="jac_about_scanner_heading">Что делает проверка</string>
 
-    <string name="jac_about_scanner_body">Каждый полученный файл проверяется, прежде чем его можно открыть или переслать, а каждая ссылка — прежде чем она откроется. В проверках, которым нужен наш сервер, передаётся только цифровой отпечаток файла или сам адрес — никогда имена файлов, тексты сообщений или отправители.\n\nВ секретных чатах проверка выполняется только на вашем устройстве. Никуда ничего не отправляется.</string>
+    <string name="jac_about_scanner_body">Каждый полученный файл проверяется, прежде чем его можно открыть или переслать, а каждая ссылка — прежде чем она откроется. Все проверки выполняются полностью на вашем устройстве — ни файлы, ни цифровые отпечатки, ни ссылки, ни имена файлов, ни тексты сообщений никуда не отправляются для проверки.\n\nСекретные чаты проверяются так же — только на вашем устройстве.</string>
 
     <string name="jac_about_licence_heading">Лицензия и исходный код</string>
 
