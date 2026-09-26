@@ -1,6 +1,6 @@
 # Humogram — Maxfiylik siyosati / Политика конфиденциальности / Privacy Policy
 
-**Oxirgi yangilanish / Последнее обновление / Last updated: 2026-09-21**
+**Oxirgi yangilanish / Последнее обновление / Last updated: 2026-09-25**
 
 <!--
   This is the USER-FACING policy and the reviewed text behind the published
@@ -98,7 +98,25 @@ xaridlarni Google Play orqali boshqarasiz; savollar bo'yicha biz bilan bog'lanin
 Ilova ochiq kodli (GPLv3): <https://github.com/skycoax/Humogram>. Loyihada
 serverli tekshiruv rejimi ham bor, lekin Google Play'dagi ilovada u yoqilmagan.
 
-### 9. Aloqa
+### 9. Bolalar va yosh cheklovlari
+
+Humogram 13 yosh va undan katta foydalanuvchilar uchun mo'ljallangan, 13 yoshga
+to'lmagan bolalarga mo'ljallanmagan. Agar mamlakatingiz qonunida onlayn
+xizmatlardan foydalanish yoki ma'lumotlaringizni ishlashga rozilik berish uchun
+yuqoriroq yosh belgilangan bo'lsa (masalan, Yevropa Ittifoqining ayrim
+mamlakatlarida 16 yosh), shu yoshgacha ilovadan faqat ota-ona yoki vasiyning
+ruxsati bilan foydalanish mumkin.
+
+Odamlar Telegram'da ommaviy joylaydigan ayrim kontent faqat kattalar uchun
+mo'ljallangan. Ilova 18+ deb belgilangan mediani standart holatda yashiradi va
+uni faqat chat sozlamalarida 18+ kontentni yoqib, 18 yoshga to'lganingizni
+tasdiqlaganingizdan keyin ko'rsatadi; qonun talab qiladigan joylarda (masalan,
+Buyuk Britaniyada) qo'shimcha yosh tekshiruvi o'tkaziladi.
+
+Agar ilovadan 13 yoshga to'lmagan bola foydalanayotgan yoki bola haqidagi
+ma'lumot bexosdan ishlangan deb hisoblasangiz, biz bilan bog'laning.
+
+### 10. Aloqa
 
 kamolov1575@gmail.com · Kamolov Muxammad
 
@@ -177,7 +195,24 @@ Telegram** (как в официальном приложении):
 проекте есть режим проверки с участием сервера, но в приложении из Google Play
 он не включён.
 
-### 9. Связь
+### 9. Дети и возрастные ограничения
+
+Humogram предназначен для пользователей от 13 лет и не рассчитан на детей
+младше 13 лет. Если закон вашей страны устанавливает более высокий возраст для
+пользования онлайн-сервисами или согласия на обработку данных (например, 16 лет
+в некоторых странах ЕС), до этого возраста пользоваться приложением можно только
+с разрешения родителя или опекуна.
+
+Часть материалов, которые люди публикуют в Telegram в открытом доступе,
+предназначена только для взрослых. Приложение по умолчанию скрывает медиа с
+отметкой 18+ и показывает их, только если вы включите контент 18+ в настройках
+чатов и подтвердите, что вам исполнилось 18 лет; там, где этого требует закон
+(например, в Великобритании), дополнительно проводится проверка возраста.
+
+Если вы считаете, что приложением пользуется ребёнок младше 13 лет или что
+данные ребёнка были обработаны по ошибке, свяжитесь с нами.
+
+### 10. Связь
 
 kamolov1575@gmail.com · Kamolov Muxammad
 
@@ -255,6 +290,22 @@ The app is open source (GPLv3): <https://github.com/skycoax/Humogram>. The
 project also contains a server-assisted scan mode, but it is not enabled in the
 app published on Google Play.
 
-### 9. Contact
+### 9. Children and age limits
+
+Humogram is intended for users aged 13 and over and is not directed to children
+under 13. If the law of your country sets a higher age for using online services
+or for consenting to the processing of your data (for example, 16 in some EU
+countries), you may use the app below that age only with a parent's or
+guardian's permission.
+
+Some content that people share publicly on Telegram is meant for adults only.
+The app hides media marked 18+ by default and shows it only after you turn on
+18+ content in Chat Settings and confirm that you are at least 18; where the law
+requires it (for example, in the UK), an additional age check is carried out.
+
+If you believe a child under 13 is using the app, or that a child's data has
+been processed in error, please contact us.
+
+### 10. Contact
 
 kamolov1575@gmail.com · Kamolov Muxammad
