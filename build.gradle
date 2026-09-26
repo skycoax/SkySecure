@@ -82,3 +82,55 @@ gradle.taskGraph.whenReady { graph ->
                 "if you are deliberately building a single-architecture package.")
     }
 }
+
+// ---------------------------------------------------------------------------
+// Humogram: a release build runs the store-readiness checks first.
+// ---------------------------------------------------------------------------
+//
+// Tools/play_policy_check.py holds every Play rejection this app has had —
+// impersonation, restricted permissions, a content rating the code had
+// outgrown, and the target API and Billing Library minimums Google raises each
+// 31 August. It was run by hand "before tagging", which is how 69929 went to
+// testers with Billing 7 and the 2026 deadline passed without the check
+// knowing about it. So a release graph runs it, and a failure stops the build.
+// Warnings (a deadline coming up) print and let the build through.
+//
+// Matching 'release' only, for the reason given above: 'bundle' also names
+// library-internal jar tasks in a debug graph. Standalone builds skip it; they
+// are not uploaded to Play.
+gradle.taskGraph.whenReady { graph ->
+    def releasing = graph.allTasks.any { task -> task.name.toLowerCase().contains('release') }
+    if (!releasing) {
+        return
+    }
+    def script = new File(rootDir, 'Tools/play_policy_check.py')
+    Integer exit = null
+    for (python in ['python', 'python3', 'py']) {
+        try {
+            def process = new ProcessBuilder(python, script.absolutePath)
+                    .directory(rootDir)
+                    .redirectErrorStream(true)
+                    .start()
+            process.inputStream.eachLine { println it }
+            exit = process.waitFor()
+        } catch (IOException ignored) {
+            continue // not on PATH under this name
+        }
+        // 9009 is Windows' "python" alias that only opens the Microsoft Store.
+        if (exit != 9009) {
+            break
+        }
+        exit = null
+    }
+    if (exit == null) {
+        throw new GradleException(
+                "A release build runs Tools/play_policy_check.py first, and no Python 3 was found\n" +
+                "on PATH (tried python, python3, py).")
+    }
+    if (exit != 0) {
+        throw new GradleException(
+                "Store-readiness checks failed; the output above names each one.\n" +
+                "Fix them, or if Play's own rules changed, update Tools/play_policy_check.py\n" +
+                "and docs/play-console.md to match.")
+    }
+}

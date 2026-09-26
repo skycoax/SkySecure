@@ -23,14 +23,22 @@ this codebase actually made, which is a much narrower thing than "the app
 complies with Google Play". A green run means these particular regressions have
 not returned.
 
+The same goes for what we declared in Play Console. The content rating was
+rejected because the questionnaire described an app the code had outgrown, and
+the target API and Billing Library deadlines passed with nothing in the build
+that knew about them. docs/play-console.md records the declarations; the checks
+below hold the code to them and to Google's yearly minimums.
+
 RUN
 
     python tools/play_policy_check.py
 
-Exit code 0 if every check passes, 1 otherwise. No dependencies, so it runs in
-CI, in a git hook, or by hand before tagging a release.
+Exit code 0 if every check passes, 1 otherwise. Warnings (a Play deadline that
+is coming up) print but do not fail. No dependencies, so it runs in CI, in a git
+hook, or by hand; every release build runs it too (see build.gradle).
 """
 
+import datetime
 import os
 import re
 import sys
@@ -41,6 +49,7 @@ JAVA = os.path.join(ROOT, 'TMessagesProj', 'src', 'main', 'java')
 MANIFEST = os.path.join(ROOT, 'TMessagesProj', 'src', 'main', 'AndroidManifest.xml')
 
 failures = []
+warnings = []
 checks_run = 0
 
 
@@ -54,6 +63,13 @@ def check(name, condition, detail=''):
         if detail:
             print('       %s' % detail)
         failures.append(name)
+
+
+def warn(name, detail=''):
+    print('  warn %s' % name)
+    if detail:
+        print('       %s' % detail)
+    warnings.append(name)
 
 
 def read(path):
@@ -306,11 +322,80 @@ def check_release_ships_every_abi():
           'the -PjacAbi release guard is gone from build.gradle')
 
 
-def check_target_sdk():
-    body = read(os.path.join(ROOT, 'TMessagesProj', 'build.gradle'))
-    match = re.search(r'targetSdkVersion\s+(\d+)', body)
-    check('targetSdkVersion is 35 or newer', match and int(match.group(1)) >= 35,
-          'found %s' % (match.group(1) if match else 'nothing'))
+# Play raises the minimum target API and Play Billing Library every 31 August
+# and says so in Policy status only weeks ahead. This check used to require
+# targetSdk 35 and nothing about billing, so it stayed green while 69929 and
+# 69919 fell below the 2026 minimums. A row whose date has passed fails; a row
+# within WARN_DAYS of its date warns.
+#
+# The 2027 row is Google's usual cadence, not an announcement. If Policy status
+# gives a different number or date, or Play granted more time, edit the row --
+# do not delete it.
+PLAY_REQUIREMENTS = [
+    # from          target API  Billing Library  source
+    ('2026-08-31', 36,          (8, 0, 0),       'enforced in Play Console Policy status'),
+    ('2027-08-31', 37,          (9, 0, 0),       'expected; confirm in Play Console Policy status'),
+]
+WARN_DAYS = 180
+
+# The library module and the app module that is uploaded to Play.
+SHIPPED_MODULES = ['TMessagesProj', 'TMessagesProj_App']
+
+
+def declared_sdk(module, key):
+    match = re.search(r'%s\s+(\d+)' % key, read(os.path.join(ROOT, module, 'build.gradle')))
+    return int(match.group(1)) if match else None
+
+
+def declared_billing_versions():
+    found = []
+    for name in sorted(os.listdir(ROOT)):
+        path = os.path.join(ROOT, name, 'build.gradle')
+        if not os.path.exists(path):
+            continue
+        pattern = r'com\.android\.billingclient:billing(?:-ktx)?:(\d+)\.(\d+)\.(\d+)'
+        for match in re.finditer(pattern, read(path)):
+            found.append((os.path.relpath(path, ROOT), tuple(int(g) for g in match.groups())))
+    return found
+
+
+def dotted(version):
+    return '.'.join(str(part) for part in version)
+
+
+def check_play_api_and_billing():
+    billing = declared_billing_versions()
+    check('Play Billing Library is declared', billing,
+          'no com.android.billingclient:billing dependency in any build.gradle')
+    for module in SHIPPED_MODULES:
+        target = declared_sdk(module, 'targetSdkVersion')
+        compile_sdk = declared_sdk(module, 'compileSdkVersion')
+        check('%s compiles against its target SDK' % module,
+              target and compile_sdk and compile_sdk >= target,
+              'compileSdkVersion %s, targetSdkVersion %s' % (compile_sdk, target))
+
+    today = datetime.date.today()
+    for since, api, library, source in PLAY_REQUIREMENTS:
+        days = (datetime.date.fromisoformat(since) - today).days
+        name = 'target API %d and Billing %s (Play, from %s)' % (api, dotted(library), since)
+        if days > WARN_DAYS:
+            print('  next %s, %d days away' % (name, days))
+            continue
+        problems = []
+        for module in SHIPPED_MODULES:
+            target = declared_sdk(module, 'targetSdkVersion')
+            if target is None or target < api:
+                problems.append('%s targets API %s' % (module, target))
+        for path, version in billing:
+            if version < library:
+                problems.append('%s uses Billing %s' % (path, dotted(version)))
+        detail = '; '.join(problems) + ' -- ' + source
+        if days <= 0:
+            check(name, not problems, detail)
+        elif problems:
+            warn('%s, in %d days' % (name, days), detail)
+        else:
+            check(name, True)
 
 
 def check_no_brand_leftovers():
@@ -322,6 +407,95 @@ def check_no_brand_leftovers():
             if 'SkySecure' in line and 'github.com' not in line:
                 offenders.append('%s:%d' % (os.path.relpath(path, ROOT), line_no))
     check('no SkySecure strings remain', not offenders, ', '.join(offenders))
+
+
+# ---------------------------------------------------------------- declarations
+
+DECLARATIONS = os.path.join(ROOT, 'docs', 'play-console.md')
+
+
+def declared_answers():
+    answers = {}
+    if os.path.exists(DECLARATIONS):
+        pattern = r'^((?:iarc|audience|data)\.\w+)\s*=\s*(\S+)'
+        for match in re.finditer(pattern, read(DECLARATIONS), re.M):
+            answers[match.group(1)] = match.group(2)
+    return answers
+
+
+# A questionnaire answer the code can prove: (answer, the value it forces, string
+# keys whose presence means the feature ships). The rejection of 2026-09-25 was
+# this drift exactly -- "communication with people you already know" while
+# NewChannel and 200 000-member groups were in the build.
+IARC_EVIDENCE = [
+    ('iarc.category', 'social', ['NewChannel']),
+    ('iarc.nudity', 'yes', ['ShowSensitiveContent']),
+    ('iarc.location', 'yes', ['SendLiveLocation', 'ShareLocation']),
+    ('iarc.random_items', 'yes', ['GiftCraftTitle', 'Gift2UpgradeButton']),
+    ('iarc.block', 'yes', ['BlockUser']),
+    ('iarc.report', 'yes', ['ReportChat']),
+]
+
+
+def check_content_rating_matches_code():
+    answers = declared_answers()
+    check('Play Console declarations are recorded', answers,
+          'docs/play-console.md is missing or has no iarc.* lines')
+    if not answers:
+        return
+    strings = read(os.path.join(RES, 'values', 'strings.xml'))
+    proven = [(key, forced, [k for k in keys if 'name="%s"' % k in strings])
+              for key, forced, keys in IARC_EVIDENCE]
+    if declared_billing_versions():
+        proven.append(('iarc.digital_goods', 'yes', ['Play Billing']))
+    for key, forced, evidence in proven:
+        if not evidence:
+            continue
+        check('IARC %s is %s (the app has %s)' % (key.split('.', 1)[1], forced, evidence[0]),
+              answers.get(key) == forced,
+              'docs/play-console.md says %r -- re-take the questionnaire, then update the file'
+              % answers.get(key))
+
+
+def check_scanner_disclosure_matches_code():
+    """Code that talks to our backend needs declarations that say so.
+
+    69939 sends nothing: no shipped code reads jac_api_base_url, and Data
+    safety, the privacy policy and the About screen all say "on the device
+    only". The device scanner's cloud check reads it. Shipping that under the
+    current declarations is the Data safety version of the content-rating
+    rejection, so it stops the release until they are rewritten.
+    """
+    declared = declared_answers().get('data.scanner_sends')
+    senders = sorted(os.path.relpath(p, ROOT) for p in java_files()
+                     if 'R.string.jac_api_base_url' in read(p))
+    if senders:
+        check('scanner network use is declared (data.scanner_sends = yes)', declared == 'yes',
+              '%s send(s) to jac_api_base_url, but docs/play-console.md says %r. Update Data safety, '
+              'the privacy policy (site and docs/) and jac_about_scanner_body first.'
+              % (', '.join(senders), declared))
+    policy = os.path.join(ROOT, 'docs', 'privacy-policy.md')
+    if declared == 'yes' and os.path.exists(policy):
+        check('privacy policy no longer says the scanner sends nothing',
+              'collects and sends nothing' not in read(policy),
+              'docs/privacy-policy.md still says "Our scanner collects and sends nothing"')
+
+
+def check_age_limit_matches_policy():
+    """The target audience and the privacy policy name the same minimum age.
+
+    The policy said Telegram's minimum age applies, and Telegram states none.
+    """
+    minimum = declared_answers().get('audience.min_age')
+    policy = os.path.join(ROOT, 'docs', 'privacy-policy.md')
+    body = read(policy) if os.path.exists(policy) else ''
+    section = re.search(r'^### \d+\. Children and age limits\n(.*?)(?=^### |\Z)', body, re.M | re.S)
+    # The section also names 16 (an EU consent age), so match the sentence that
+    # sets the minimum, not any number.
+    check('privacy policy states the target audience\'s minimum age',
+          minimum and section and re.search(r'aged\s+%s\s+and\s+over' % re.escape(minimum), section.group(1)),
+          'audience.min_age is %s in docs/play-console.md; the English "Children and age '
+          'limits" section of docs/privacy-policy.md is %s' % (minimum, 'there' if section else 'missing'))
 
 
 def main():
@@ -339,12 +513,19 @@ def main():
         ('disclosure', check_privacy_policy_names_this_app),
         ('privacy', check_no_user_content_in_release_logs),
         ('packaging', check_release_ships_every_abi),
-        ('packaging', check_target_sdk),
+        ('packaging', check_play_api_and_billing),
         ('branding', check_no_brand_leftovers),
+        ('declarations', check_content_rating_matches_code),
+        ('declarations', check_scanner_disclosure_matches_code),
+        ('declarations', check_age_limit_matches_policy),
     ]:
         fn()
 
-    print('\n%d checks, %d failed' % (checks_run, len(failures)))
+    print('\n%d checks, %d failed, %d warnings' % (checks_run, len(failures), len(warnings)))
+    if warnings:
+        print('\nComing up:')
+        for name in warnings:
+            print('  - %s' % name)
     if failures:
         print('\nFailed:')
         for name in failures:
